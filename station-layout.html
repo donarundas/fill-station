@@ -492,12 +492,20 @@ function renderGridTop(svg) {
   el('path', { d: `M${wx},${wy} L${wx + 20},${wy}`, stroke: '#5b6b7d', 'stroke-width': 1.6 }, svg);
   el('path', { d: `M${wx + 20},${wy - 4} L${wx + 27},${wy} L${wx + 20},${wy + 4} Z`, fill: '#5b6b7d' }, svg);
   txt(svg, wx + 4, wy + 14, 'WIND', { size: 7.5, color: '#5b6b7d', anchor: 'start' });
-  // O₂ storage separation ring (ISO/EIGA practice) around the O₂ cascade
+  // O₂ storage separation ring (ISO/EIGA practice) around the O₂ cascade —
+  // CLIPPED to the room so only the in-building keep-out area is drawn.
   const o2 = byId('O2-01');
   if (o2) {
     const cx = V.H(o2.x + fx(o2) / 2), cy = V.V(o2.y + fy(o2) / 2);
-    el('circle', { cx, cy, r: 3.0 * S, fill: 'none', stroke: '#b91c1c', 'stroke-width': 1.1, 'stroke-dasharray': '4 5', opacity: 0.7 }, svg);
-    txt(svg, Math.max(130, Math.min(cx, (WX1() - WX0) * S - 130)), cy + 3.0 * S + 11, 'O₂ SEPARATION ≥3.0 m · ISO/EIGA', { size: 7.5, color: '#b91c1c' });
+    const defs = el('defs', {}, svg);
+    const clip = el('clipPath', { id: 'roomclip' }, defs);
+    el('rect', { x: V.H(0), y: V.V(0), width: RM().w * S, height: RM().d * S }, clip);
+    const g = el('g', { 'clip-path': 'url(#roomclip)' }, svg);
+    el('circle', { cx, cy, r: 3.0 * S, fill: '#b91c1c', opacity: 0.05 }, g);
+    el('circle', { cx, cy, r: 3.0 * S, fill: 'none', stroke: '#b91c1c', 'stroke-width': 1.2, 'stroke-dasharray': '4 5', opacity: 0.75 }, g);
+    // label sits inside the room, just inside the arc
+    const lx = Math.max(V.H(0) + 8, cx - 3.0 * S + 8), ly = Math.min(cy + 3.0 * S - 8, V.V(RM().d) - 8);
+    txt(svg, lx, ly, 'O₂ KEEP-OUT ≥3.0 m · ISO/EIGA', { size: 7.5, color: '#b91c1c', anchor: 'start' });
   }
   // inter-cascade dimension hint between BANK-A and BANK-N
   const a = byId('BANK-A'), n = byId('BANK-N');
@@ -590,6 +598,23 @@ function renderItems(svg, viewKey) {
       el('rect', { x: px - 3, y: V.V(it.z), width: hw + 6, height: (it.z) * S, fill: 'none',
         stroke: '#9aa4b0', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, g);
     }
+    if (it.type === 'area') {
+      // floor-marked staging zone — corner brackets + light hatch, not a solid box
+      const b = 14;
+      if (viewKey === 'top' || viewKey === 'side' && false) { /* areas only meaningful in plan */ }
+      el('rect', { x: px, y: py, width: Math.max(hw, 4), height: Math.max(hh, 4),
+        fill: color, opacity: 0.05 }, g);
+      // hatch
+      for (let hx = 12; hx < hw; hx += 16) {
+        el('path', { d: `M${px + hx},${py} l${-Math.min(hx, hh)},${Math.min(hx, hh)}`, stroke: color, 'stroke-width': 0.8, opacity: 0.25 }, g);
+      }
+      // corner L-brackets
+      const cs = viewKey === 'top' ? [[px, py, 1, 1], [px + hw, py, -1, 1], [px, py + hh, 1, -1], [px + hw, py + hh, -1, -1]] : [];
+      for (const [bx, by, sx, sy] of cs) {
+        el('path', { d: `M${bx + sx * b},${by} L${bx},${by} L${bx},${by + sy * b}`, fill: 'none',
+          stroke: selected ? 'var(--accent, #1d4ed8)' : color, 'stroke-width': selected ? 2.4 : 1.8 }, g);
+      }
+    } else {
     const rectAttrs = {
       x: px, y: py, width: Math.max(hw, 4), height: Math.max(hh, 4), rx: 2,
       fill: '#fff', stroke: selected ? 'var(--accent, #1d4ed8)' : color,
@@ -597,8 +622,8 @@ function renderItems(svg, viewKey) {
     };
     if (viewKey === 'top' && it.z > 0.05) { rectAttrs['stroke-dasharray'] = '5 3'; rectAttrs.opacity = 0.9; }
     if (it.outdoor && viewKey === 'front') { rectAttrs.opacity = 0.45; }
-    if (it.type === 'area') { rectAttrs.fill = 'none'; rectAttrs['stroke-dasharray'] = '6 4'; }
     el('rect', rectAttrs, g);
+    }
     if (selected) {
       el('rect', { x: px - 3.5, y: py - 3.5, width: Math.max(hw, 4) + 7, height: Math.max(hh, 4) + 7, rx: 4,
         fill: 'none', stroke: 'var(--accent, #1d4ed8)', 'stroke-width': 1, opacity: 0.45, 'stroke-dasharray': '3 3' }, g);
