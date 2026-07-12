@@ -76,6 +76,21 @@
   .notes { font-size: 13.3px; color: var(--page-muted); }
   .notes li { margin-bottom: 6px; }
 
+  .pid-tip {
+    position: fixed; z-index: 50; pointer-events: none;
+    max-width: 320px; padding: 10px 13px; border-radius: 9px;
+    background: #1c2530; color: #eef2f6;
+    font-size: 12.5px; line-height: 1.5;
+    box-shadow: 0 6px 18px rgba(10, 20, 35, .35);
+    opacity: 0; transition: opacity .1s;
+  }
+  .pid-tip .tip-tag {
+    display: block; margin-bottom: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .03em; color: #ffd08a;
+  }
+  @media print { .pid-tip { display: none; } }
+
   .print-btn {
     float: right; margin: 8px 0 0 20px;
     border: 1px solid var(--rule); background: var(--card); color: var(--page-text);
@@ -153,10 +168,11 @@
       <h3><span class="n">3</span>HP compression &amp; purification</h3>
       <p>Two Bauer PE 350 compressors <span class="tag">C-01/C-02</span> (350 lpm each, N+1) compress to 300 bar
       through discharge check valves. The chiller <span class="tag">E-01</span> cools the final stage so the
-      HP separator and the filtration towers work efficiently. <span class="tag">F-02</span> (molecular
-      sieve / activated carbon / hopcalite) is held above 150 bar by the pressure-maintaining valve
-      <span class="tag">PMV-01</span> and supervised by the Securus moisture sensor
-      <span class="tag">MT-01</span>; <span class="tag">AT-02</span> spot-checks CO against EN 12021.</p>
+      HP separator and the filtration towers work efficiently. <span class="tag">F-02</span> — three
+      Bauer P61 towers (molecular sieve / activated carbon / hopcalite) plus a P41 final tower carrying
+      the Securus sensor <span class="tag">MT-01</span> — is held above 150 bar by the
+      pressure-maintaining valve <span class="tag">PMV-01</span>; <span class="tag">AT-02</span>
+      spot-checks CO against EN 12021.</p>
     </section>
     <section>
       <h3><span class="n">4</span>Storage cascades</h3>
@@ -180,10 +196,11 @@
       <h3><span class="n">6</span>Filling &amp; blending panel</h3>
       <p>Every inlet of <span class="tag">FP-01</span> carries isolation, a check valve and an inline
       filter. O₂ and He are metered through needle valves against the master gauge
-      <span class="tag">PI-10</span>; the analysis port feeds the O₂ analyzer <span class="tag">AT-03</span>
-      so every mix is verified before it leaves. The manifold has its own relief
-      (<span class="tag">PSV-05</span>) and vent; four whips with individual isolation and bleed valves
-      serve the diving cylinders.</p>
+      <span class="tag">PI-11</span>. A restricted analysis line (<span class="tag">FO-01</span>) feeds the
+      Deox multi-gas analyzer <span class="tag">AT-03</span> — O₂, He and CO₂ read on every fill — and the
+      verified mix gets a printed contents label (<span class="tag">LBL-01</span>). The manifold has its
+      own relief (<span class="tag">PSV-05</span>) and vent; four whips with individual isolation and
+      bleed valves serve the diving cylinders.</p>
     </section>
   </div>
 
@@ -203,11 +220,13 @@
       <tr><td class="mono">PMV-01</td><td>Pressure-maintaining valve</td><td>F-02 filtration back-pressure</td><td class="mono">≥150 bar</td></tr>
       <tr><td class="mono">AT-01</td><td>O₂ analyzer</td><td>Membrane permeate</td><td class="mono">21–40 % · trip ≥40 %</td></tr>
       <tr><td class="mono">AT-02</td><td>CO analyzer</td><td>Post-filtration air quality</td><td class="mono">alarm 5 ppm (EN 12021)</td></tr>
-      <tr><td class="mono">AT-03</td><td>O₂ analyzer</td><td>Panel analysis port</td><td class="mono">0–100 %</td></tr>
+      <tr><td class="mono">AT-03</td><td>Deox multi-gas analyzer</td><td>Fill verification via FO-01 restrictor</td><td class="mono">O₂ 0–100 % · He 0–100 % · CO₂ ppm</td></tr>
       <tr><td class="mono">MT-01</td><td>Moisture sensor (Securus)</td><td>F-02 cartridge saturation</td><td class="mono">alarm → compressor trip</td></tr>
       <tr><td class="mono">TI-01</td><td>Temperature indicator</td><td>Membrane feed</td><td class="mono">45 °C nominal</td></tr>
       <tr><td class="mono">FI-01</td><td>Flow indicator</td><td>Membrane permeate</td><td class="mono">rotameter</td></tr>
       <tr><td class="mono">PI-01…10</td><td>Pressure gauges</td><td>LP 0–16 bar · HP 0–400 bar</td><td class="mono">glycerine-filled, cl. 1.0</td></tr>
+      <tr><td class="mono">PI-11</td><td>Master blending gauge</td><td>FP-01 blend manifold</td><td class="mono">0–400 bar · cl. 0.5</td></tr>
+      <tr><td class="mono">FO-01</td><td>Flow restrictor orifice</td><td>Analyzer sample line to AT-03</td><td class="mono">restricted sample bleed</td></tr>
     </tbody>
   </table>
   </div>
@@ -246,7 +265,7 @@ function el(name, attrs = {}, parent = svg) {
 }
 function grp(title) {
   const g = el('g');
-  if (title) { const t = document.createElementNS(NS, 'title'); t.textContent = title; g.appendChild(t); }
+  if (title) { g.setAttribute('data-tip', title); g.style.cursor = 'help'; }
   return g;
 }
 function pts2d(pts) { return 'M' + pts.map(p => p.join(',')).join(' L'); }
@@ -525,21 +544,23 @@ vessel(1372, 194, 26, 48, 'HP separator — condensate knock-out after the chill
 drainAD(1385, 242);
 pipe([[1398, 218],[1420, 218]], 'hp');
 
-/* F-02 filtration frame */
-const f02 = grp('F-02 — HP filtration (Bauer P61 class): molecular sieve, activated carbon, hopcalite. Securus-monitored.');
+/* F-02 filtration frame — 3× Bauer P61 towers + 1× P41 with Securus */
+const f02 = grp('F-02 — HP purification: 3× Bauer P61 towers (molecular sieve, activated carbon, hopcalite) + 1× Bauer P41 final tower carrying the SECURUS moisture sensor.');
 el('rect', { x:1420, y:140, width:158, height:150, fill:'none', stroke:INK, 'stroke-width':1.4,
   'stroke-dasharray':'8 5' }, f02);
-filt(1434, 158, 30, 112, 'Molecular sieve tower (water)');
-filt(1478, 158, 30, 112, 'Activated carbon tower (oil, odour)');
-filt(1522, 158, 30, 112, 'Hopcalite tower (CO → CO₂)');
-label(1449, 284, 'MS', { size:8.5, mono:true }); label(1493, 284, 'AC', { size:8.5, mono:true });
-label(1537, 284, 'HC', { size:8.5, mono:true });
-label(1499, 130, 'F-02 · HP FILTRATION + SECURUS', { size:9.5 });
+filt(1432, 158, 26, 112, 'Bauer P61 tower 1 — molecular sieve cartridge (water)');
+filt(1467, 158, 26, 112, 'Bauer P61 tower 2 — activated carbon cartridge (oil, odour)');
+filt(1502, 158, 26, 112, 'Bauer P61 tower 3 — hopcalite cartridge (CO → CO₂)');
+filt(1537, 158, 26, 112, 'Bauer P41 tower — final cartridge with SECURUS moisture sensor (MT-01)');
+label(1445, 284, 'P61', { size:8, mono:true }); label(1480, 284, 'P61', { size:8, mono:true });
+label(1515, 284, 'P61', { size:8, mono:true }); label(1550, 284, 'P41', { size:8, mono:true });
+label(1499, 130, 'F-02 · 3× P61 + P41 SECURUS', { size:9.5 });
 psv(1410, 218, 'hp', 'PSV-02', '330 bar', 'l');
-inst(1499, 88, 'MT', '01', [1493, 158], 'SECURUS · MOISTURE TRIP');
-pipe([[1420, 218],[1434, 218]], 'hp');
-pipe([[1464, 218],[1478, 218]], 'hp'); pipe([[1508, 218],[1522, 218]], 'hp');
-pipe([[1552, 218],[1600, 218]], 'hp');
+inst(1499, 88, 'MT', '01', [1550, 158], 'SECURUS · MOISTURE TRIP');
+pipe([[1420, 218],[1432, 218]], 'hp');
+pipe([[1458, 218],[1467, 218]], 'hp'); pipe([[1493, 218],[1502, 218]], 'hp');
+pipe([[1528, 218],[1537, 218]], 'hp');
+pipe([[1563, 218],[1600, 218]], 'hp');
 
 reg(1612, 218, 'hp', 'PMV-01', '≥150 bar', 'PMV-01 — pressure-maintaining valve: keeps towers at working pressure for drying efficiency');
 pipe([[1620, 218],[1648, 218]], 'hp');
@@ -561,14 +582,15 @@ checkV(1580, 498, 'v', 'ean', 1);
 pipe([[1470, 540],[1690, 540]], 'ean');
 psv(1478, 540, 'ean', 'PSV-03B', '330 bar');
 inst(1712, 505, 'PI', '07', [1685, 537]);
+const bankN = grp('BANK-N — EAN32 storage cascade, 4×50 L water capacity @ 300 bar. O₂-clean (>23.5% O₂ = oxygen service). Fill divers from the lowest bank first, top from the highest.');
 [1500, 1548, 1610, 1658].forEach((x) => {
-  pipe([[x, 540],[x, 560]], 'ean', 1.8);
-  cyl(x - 14, 560, 28, 96, CLS.ean.stroke);
-  pipe([[x, 656],[x, 668]], 'ean', 1.8);
+  pipe([[x, 540],[x, 560]], 'ean', 1.8, bankN);
+  cyl(x - 14, 560, 28, 96, CLS.ean.stroke, bankN);
+  pipe([[x, 656],[x, 668]], 'ean', 1.8, bankN);
 });
-pipe([[1500, 668],[1658, 668]], 'ean', 1.8);
+pipe([[1500, 668],[1658, 668]], 'ean', 1.8, bankN);
 el('rect', { x:1470, y:552, width:220, height:126, fill:'none', stroke:CLS.ean.stroke,
-  'stroke-width':1, 'stroke-dasharray':'4 4' });
+  'stroke-width':1, 'stroke-dasharray':'4 4' }, bankN);
 label(1580, 698, 'BANK-N · EAN32 CASCADE · 4×50 L · 300 bar', { size:9.5 });
 /* EAN return to panel */
 pipe([[1658, 668],[1658, 880],[1105, 880]], 'ean');
@@ -582,14 +604,15 @@ checkV(1200, 498, 'v', 'hp', 1);
 pipe([[1080, 540],[1330, 540]], 'hp');
 psv(1088, 540, 'hp', 'PSV-03A', '330 bar');
 inst(1352, 505, 'PI', '06', [1325, 537]);
+const bankA = grp('BANK-A — breathing-air storage cascade, 4×50 L water capacity @ 300 bar. Check valve at the header stops back-flow; cascade-fill from the lowest bank first.');
 [1110, 1158, 1218, 1266].forEach((x) => {
-  pipe([[x, 540],[x, 560]], 'hp', 1.8);
-  cyl(x - 14, 560, 28, 96, CLS.hp.stroke);
-  pipe([[x, 656],[x, 668]], 'hp', 1.8);
+  pipe([[x, 540],[x, 560]], 'hp', 1.8, bankA);
+  cyl(x - 14, 560, 28, 96, CLS.hp.stroke, bankA);
+  pipe([[x, 656],[x, 668]], 'hp', 1.8, bankA);
 });
-pipe([[1110, 668],[1266, 668]], 'hp', 1.8);
+pipe([[1110, 668],[1266, 668]], 'hp', 1.8, bankA);
 el('rect', { x:1080, y:552, width:206, height:126, fill:'none', stroke:CLS.hp.stroke,
-  'stroke-width':1, 'stroke-dasharray':'4 4' });
+  'stroke-width':1, 'stroke-dasharray':'4 4' }, bankA);
 label(1183, 698, 'BANK-A · AIR CASCADE · 4×50 L · 300 bar', { size:9.5 });
 /* AIR bank return to panel */
 pipe([[1110, 668],[1110, 712],[1030, 712],[1030, 830],[1105, 830]], 'hp');
@@ -691,8 +714,6 @@ pipe([[1105, 830],[1015, 830],[1015, 950]], 'hp', 1.8);   /* cascade air */
 pipe([[1105, 880],[1055, 880],[1055, 950]], 'ean', 1.8);  /* EAN32 */
 
 psv(812, 760, 'hp', 'PSV-05', '330 bar');
-inst(975, 815, 'AT', '03', [975, 946]);
-label(975, 845, 'ANALYSIS', { size:8, color:'#5b6b7d' });
 inst(1075, 815, 'PI', '11', [1060, 946]);
 label(1078, 845, 'MASTER 0.5%', { size:8, color:'#5b6b7d' });
 /* panel vent */
@@ -710,6 +731,22 @@ label(1146, 908, 'VENT', { size:8, color:'#5b6b7d' });
   cyl(x - 12, 1030, 24, 78, INK);
 });
 label(938, 1128, 'FILL WHIPS 1–4 (DIN 232) → DIVING CYLINDERS', { size:9.5 });
+
+/* analysis train: manifold → FO-01 flow restrictor → Deox multi-gas analyzer → label printer */
+pipe([[1085, 950],[1150, 950],[1150, 1040]], 'hp', 1.6);
+const fo = grp('FO-01 — flow restrictor orifice: bleeds a small, safe sample flow from the blend manifold to the analyzer.');
+el('path', { d:'M1140,993 L1147,993 M1153,993 L1160,993 M1140,999 L1147,999 M1153,999 L1160,999',
+  stroke:INK, 'stroke-width':2.2 }, fo);
+label(1166, 1000, 'FO-01', { size:8.5, mono:true, anchor:'start' });
+label(1166, 1011, 'RESTRICTOR', { size:7.5, anchor:'start', color:'#5b6b7d' });
+const deox = grp('AT-03 — Deox multi-gas analyzer: O₂, He and CO₂ read on every fill through FO-01 before the cylinder leaves the whip.');
+el('rect', { x:1140, y:1040, width:150, height:52, fill:'#fff', stroke:INK, 'stroke-width':2.2 }, deox);
+label(1215, 1061, 'AT-03 · DEOX MULTI-GAS', { size:9, parent:deox });
+label(1215, 1076, 'O₂ · He · CO₂', { size:8.5, mono:true, color:'#5b6b7d', parent:deox });
+const lbl = grp('LBL-01 — label printer: prints the verified contents label (mix %, MOD, date, analyst) for the filled cylinder.');
+el('path', { d:'M1215,1092 L1215,1112', stroke:CLS.sig.stroke, 'stroke-width':1.4, 'stroke-dasharray':'2 4' }, lbl);
+el('rect', { x:1160, y:1112, width:110, height:34, fill:'#fff', stroke:INK, 'stroke-width':1.8 }, lbl);
+label(1215, 1133, 'LBL-01 · LABEL PRINTER', { size:8, parent:lbl });
 
 /* =========================================================
    LEGEND  (top-left)
@@ -773,6 +810,58 @@ label(1394, 1181, 'DATE', { size:7.5, anchor:'start', color:'#5b6b7d' });
 label(1394, 1194, '2026-07-12', { size:10, anchor:'start', mono:true });
 label(1572, 1181, 'SCALE', { size:7.5, anchor:'start', color:'#5b6b7d' });
 label(1572, 1194, 'NTS', { size:10, anchor:'start', mono:true });
+
+/* =========================================================
+   TOOLTIPS — styled hover/tap tips from each group's data-tip
+   (format: "TAG — detailed duty" → tag header + body text)
+========================================================= */
+const tipEl = document.createElement('div');
+tipEl.className = 'pid-tip';
+document.body.appendChild(tipEl);
+
+function renderTip(txt) {
+  tipEl.textContent = '';
+  const sep = txt.indexOf(' — ');
+  if (sep > 0 && sep < 40) {
+    const tag = document.createElement('span');
+    tag.className = 'tip-tag';
+    tag.textContent = txt.slice(0, sep);
+    tipEl.appendChild(tag);
+    tipEl.appendChild(document.createTextNode(txt.slice(sep + 3)));
+  } else {
+    tipEl.appendChild(document.createTextNode(txt));
+  }
+}
+function placeTip(x, y) {
+  const r = tipEl.getBoundingClientRect();
+  let lx = x + 16, ly = y + 18;
+  if (lx + r.width > window.innerWidth - 10) lx = x - r.width - 14;
+  if (ly + r.height > window.innerHeight - 10) ly = y - r.height - 14;
+  tipEl.style.left = Math.max(8, lx) + 'px';
+  tipEl.style.top = Math.max(8, ly) + 'px';
+}
+let tipFor = null;
+svg.addEventListener('pointermove', (e) => {
+  const g = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+  if (g) {
+    if (g !== tipFor) { renderTip(g.getAttribute('data-tip')); tipFor = g; }
+    tipEl.style.opacity = '1';
+    placeTip(e.clientX, e.clientY);
+  } else {
+    tipEl.style.opacity = '0'; tipFor = null;
+  }
+});
+svg.addEventListener('pointerleave', () => { tipEl.style.opacity = '0'; tipFor = null; });
+// Touch: tap shows the tip near the element for a few seconds.
+svg.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  const g = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+  if (!g) { tipEl.style.opacity = '0'; tipFor = null; return; }
+  renderTip(g.getAttribute('data-tip')); tipFor = g;
+  tipEl.style.opacity = '1';
+  placeTip(e.clientX, e.clientY);
+  window.setTimeout(() => { if (tipFor === g) { tipEl.style.opacity = '0'; tipFor = null; } }, 4000);
+});
 
 })();
 </script>
