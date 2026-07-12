@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Fixed-width viewport: phones render the full desktop layout (zoomed out) instead of a reflowed mobile view. -->
+<meta name="viewport" content="width=1280">
+<title>BlendStation — Station Layout (BSD-LAY-001)</title>
+<style>
+  :root {
+    --page: #eef1f4;
+    --page-text: #253242;
+    --page-muted: #5b6b7d;
+    --card: #ffffff;
+    --rule: #d5dce3;
+    --accent: #1d4ed8;
+    --ink: #1c2530;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --page:#161b22; --page-text:#dbe3ec; --page-muted:#93a3b5; --card:#1e2530; --rule:#333d4a; --accent:#7ea6ff; }
+  }
+  :root[data-theme="dark"] { --page:#161b22; --page-text:#dbe3ec; --page-muted:#93a3b5; --card:#1e2530; --rule:#333d4a; --accent:#7ea6ff; }
+  :root[data-theme="light"] { --page:#eef1f4; --page-text:#253242; --page-muted:#5b6b7d; --card:#ffffff; --rule:#d5dce3; --accent:#1d4ed8; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--page-text);
+    font: 15px/1.55 "Helvetica Neue", Arial, ui-sans-serif, sans-serif;
+  }
+  header.page { max-width: 1280px; margin: 0 auto; padding: 30px 24px 14px; }
+  header.page .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--page-muted); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  header.page h1 { font-size: 25px; margin: 6px 0 4px; letter-spacing: -.4px; text-wrap: balance; }
+  header.page p { margin: 0; color: var(--page-muted); max-width: 78ch; font-size: 13.5px; }
+
+  .toolbar { display: flex; gap: 8px; float: right; margin: 6px 0 0 20px; }
+  .toolbar button {
+    border: 1px solid var(--rule); background: var(--card); color: var(--page-text);
+    padding: 8px 14px; border-radius: 8px; font: 600 12.5px/1 inherit; cursor: pointer; white-space: nowrap;
+  }
+  .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+  .toolbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1280px; margin: 10px auto 60px; padding: 0 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
+
+  .view-card {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(10,20,35,.08); margin-bottom: 16px; overflow: hidden;
+  }
+  .view-card h3 {
+    margin: 0; padding: 8px 14px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--page-muted); border-bottom: 1px solid var(--rule);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 600;
+  }
+  .view-card h3 span { float: right; text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .view-card svg { display: block; width: 100%; height: auto; background: #fff; touch-action: none; user-select: none; }
+
+  .rail > div {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(10,20,35,.08); margin-bottom: 16px; padding: 14px 16px;
+  }
+  .rail h3 {
+    margin: 0 0 10px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--page-muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 600;
+  }
+  #inspector .empty { color: var(--page-muted); font-size: 13px; }
+  #inspector .tag-line { font-family: ui-monospace, Menlo, monospace; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  #inspector .name-line { font-size: 13px; color: var(--page-muted); margin-bottom: 10px; }
+  #inspector .dims { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--page-muted); margin-bottom: 10px; }
+  #inspector .coords { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  #inspector label { display: block; font-size: 10px; letter-spacing: .08em; color: var(--page-muted); margin-bottom: 3px; font-family: ui-monospace, Menlo, monospace; }
+  #inspector input {
+    width: 100%; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px;
+    font: 600 13px/1 ui-monospace, Menlo, monospace; color: var(--page-text); background: var(--card);
+  }
+  #inspector input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #inspector .btn-row { display: flex; gap: 8px; }
+  #inspector .btn-row button {
+    flex: 1; border: 1px solid var(--rule); background: var(--card); color: var(--page-text);
+    padding: 7px 0; border-radius: 7px; font: 600 12px/1 inherit; cursor: pointer;
+  }
+  #inspector .btn-row button:hover { border-color: var(--accent); color: var(--accent); }
+  #inspector .hint { font-size: 11px; color: var(--page-muted); margin-top: 10px; line-height: 1.5; }
+
+  #bom table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  #bom th { text-align: left; font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--page-muted); padding: 3px 8px 3px 0; border-bottom: 1px solid var(--rule); }
+  #bom td { padding: 3px 8px 3px 0; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  #bom td.mono { font-family: ui-monospace, Menlo, monospace; font-size: 11px; white-space: nowrap; }
+  #bom tr.sub td { font-weight: 700; }
+  #bom tr.grand td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--ink); }
+  #bom .swatch { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+
+  .page-foot {
+    max-width: 1280px; margin: 0 auto; padding: 0 24px 40px;
+    font-size: 12.5px; color: var(--page-muted); text-align: center;
+  }
+  .page-foot strong { color: var(--page-text); font-weight: 600; }
+
+  .pid-tip {
+    position: fixed; z-index: 50; pointer-events: none;
+    max-width: 320px; padding: 10px 13px; border-radius: 9px;
+    background: #1c2530; color: #eef2f6;
+    font-size: 12.5px; line-height: 1.5;
+    box-shadow: 0 6px 18px rgba(10, 20, 35, .35);
+    opacity: 0; transition: opacity .1s;
+  }
+  .pid-tip .tip-tag {
+    display: block; margin-bottom: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .03em; color: #ffd08a;
+  }
+
+  /* Print: page 1 = TOP plan, page 2 = elevations + BOM */
+  @page { size: A4 landscape; margin: 9mm; }
+  @media print {
+    body { background: #fff; }
+    header.page, .toolbar, .rail #inspector, .pid-tip, #lay-notes, #toast { display: none; }
+    .wrap { max-width: none; margin: 0; padding: 0; }
+    .grid { display: block; }
+    .view-card { border: none; box-shadow: none; margin: 0; }
+    #card-top { height: 186mm; }
+    #card-top svg { width: auto; height: 174mm; margin: 0 auto; }
+    #card-front { break-before: page; page-break-before: always; }
+    #card-front, #card-side { display: inline-block; width: 49%; vertical-align: top; }
+    #card-front svg, #card-side svg { width: 100%; height: auto; }
+    .rail > div { border: none; box-shadow: none; padding: 4px 0; }
+    #bom { column-count: 2; column-gap: 10mm; }
+    #bom h3 { column-span: all; }
+    #bom table { font-size: 7.8px; }
+    #bom td, #bom th { padding: 1px 6px 1px 0; }
+    #bom tr { break-inside: avoid; }
+    .page-foot { text-align: left; font-size: 8.5px; padding: 6px 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <div class="toolbar">
+    <a href="station-pid.html" style="border:1px solid var(--rule);background:var(--card);color:var(--page-text);padding:8px 14px;border-radius:8px;font:600 12.5px/1 inherit;text-decoration:none;white-space:nowrap">← P&amp;ID</a>
+    <button type="button" id="btn-optimize">✨ Optimize room</button>
+    <button type="button" id="btn-export">Export JSON</button>
+    <button type="button" id="btn-import">Import</button>
+    <button type="button" id="btn-reset">Reset layout</button>
+    <button type="button" onclick="window.print()">⎙ Print</button>
+  </div>
+  <div class="eyebrow">BSD-LAY-001 · REV A · 2026-07-12</div>
+  <h1>Station Layout — Tri-View Editor</h1>
+  <p>Drag equipment in any view — top edits plan position, front and side edit height too. Hoses re-route
+     live and the schedule totals their lengths. Everything autosaves; the exported JSON is the contract
+     for the 3D viewer.</p>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="views">
+      <div class="view-card" id="card-top">
+        <h3>Top view · plan <span id="ro-top"></span></h3>
+        <svg id="viewTop" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 750" aria-label="Top view — room plan"></svg>
+      </div>
+      <div class="view-card" id="card-front">
+        <h3>Front view · looking north (x–z)</h3>
+        <svg id="viewFront" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 246" aria-label="Front elevation"></svg>
+      </div>
+      <div class="view-card" id="card-side">
+        <h3>Side view · looking west (y–z)</h3>
+        <svg id="viewSide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 246" aria-label="Side elevation"></svg>
+      </div>
+    </div>
+    <div class="rail">
+      <div id="inspector"><h3>Selection</h3><div class="empty">Click any equipment to select it.</div></div>
+      <div id="bom"><h3>Hose schedule</h3></div>
+      <div id="lay-notes"><h3>Layout notes (practice)</h3>
+        <ul style="margin:0;padding-left:18px;font-size:11.5px;color:var(--page-muted);line-height:1.55">
+          <li>O₂/EAN32 racks: ≥6.1 m from any fuel or ignition source, or a ≥1.5 m high 30-min fire barrier.</li>
+          <li>Cascade racks, booster and filtration panel are WALL-MOUNTED/wall-backed — never free-standing in open floor. Cylinders chained at ⅓ and ⅔ height; storage ≤52 °C.</li>
+          <li>Forced ventilation is mandatory &gt;15 kW: ~400 m³/h per kW at ΔT 7 K. Capture-at-source: hood over the compressors + HVAC duct outdoors (≤5 m/s duct velocity) beats room dilution; ducting the Kaeser's own exhaust removes ~21 kW more.</li>
+          <li>Fill whips: use a containment fill station (fragments directed upward); cylinder axes point at blank masonry, never at the door or operator.</li>
+          <li>Egress ≥0.71 m at every point; door ≥0.81 m clear, opens outward; ≥2.03 m headroom under pipe runs on the escape path.</li>
+          <li>Membrane N₂-rich retentate and all relief/vent lines terminate outdoors.</li>
+          <li>Electrical DB (~50 kW load) needs 0.91×0.76 m clear working space, outside the O₂ bay.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="page-foot">Drawn &amp; engineered by <strong>Donarun Das</strong> · fill-station.donarundas.com · 2026</footer>
+
+<input type="file" id="import-file" accept="application/json,.json" style="display:none">
+
+<script>
+(() => {
+'use strict';
+/* =========================================================================
+   BSD-LAY-001 — tri-view station layout editor.
+
+   SCENE JSON CONTRACT (schemaVersion 1) — consumed later by the 3D viewer:
+     units metres · origin = room inner NW corner at floor level
+     x → east · y → south · z → up (Three.js mapping: tx=x, ty=z, tz=y)
+     items: { id,label,type,kind, w,d,h, x,y,z, rot(0/90/180/270),
+              bench?,outdoor?,fixed? }  — (x,y) is the min corner of the
+              PLACED footprint (post-rotation), z is the underside height.
+     hoses: { id, from:itemId, to:itemId, kind } — routed geometry is
+              derived, never stored.
+========================================================================= */
+const NS = 'http://www.w3.org/2000/svg';
+const S = 56;                                   // px per metre
+const ROOM0 = { w: 12, d: 10, h: 3.6 };         // reference room (defaults); live room is scene.room
+const WX0 = -0.6, WY0 = -0.6;                   // world canvas margins (left/top)
+/* live-room helpers — the room can shrink after Optimize, so everything derives from the scene */
+const RM = () => state.scene.room;
+const hasOutdoor = () => state.scene.items.some((i) => i.outdoor);
+const APRON = () => hasOutdoor()
+  ? { y0: RM().d + 0.2, y1: RM().d + 2.2 }   // outdoor strip south of the room
+  : { y0: RM().d, y1: RM().d };              // no outdoor plant — no apron
+const WX1 = () => RM().w + 0.8;
+const WY1 = () => APRON().y1 + 0.6;
+const ZTOP = () => RM().h + 0.6;                // top of elevation canvas
+const RACK = () => Math.min(2.4, Math.max(2.2, RM().h - 1.0)); // wall-run height 2.2–2.4 m (practice); keeps ≥2.03 m egress headroom
+const KIND = {
+  lp:  '#c2700d', hp: '#1d4ed8', ean: '#0f766e', o2: '#15803d', he: '#8a5a2b',
+  drv: '#c2700d', vnt: '#8b93a1', sig: '#7c8794', amb: '#1c2530', x: '#64748b',
+  duct: '#7c8794',
+};
+const DASHED = { drv: '7 5', vnt: '5 5', sig: '2 4' };
+const INK = '#1c2530';
+
+/* ---------- default reference layout ---------- */
+function defaultScene() {
+  const I = (id, label, type, kind, w, d, h, x, y, z, rot, extra) =>
+    Object.assign({ id, label, type, kind, w, d, h, x, y, z, rot }, extra || {});
+  return {
+    schemaVersion: 1,
+    room: { ...ROOM0 },
+    items: [
+      I('IN-01', 'Intake snorkel (upwind, high)', 'wall-marker', 'amb', 0.30, 0.25, 0.40, 0.05, 0.50, 2.80, 0, { fixed: false }),
+      I('VF-01', 'Supply-air louvre (low, windward) — free area ≥0.02 m²/kW; inlet 1.2× exhaust opening', 'wall-marker', 'amb', 0.60, 0.25, 0.60, 0.05, 3.00, 0.30, 90),
+      I('VF-02', 'Ducted extract fan — pulls hot air off the compressor hood and ducts it OUTDOORS (duct velocity ≤5 m/s; ~400 m³/h per kW at ΔT 7 K ≈ 14–20k m³/h; forced ventilation mandatory >15 kW)', 'wall-marker', 'amb', 0.60, 0.30, 0.60, 1.80, 0.05, 2.90, 0),
+      I('HOOD-01', 'Extraction hood over the compressors — captures rejected heat at source', 'hood', 'vnt', 2.60, 1.00, 0.45, 0.90, 2.50, 2.05, 0),
+      I('K-01', 'Kaeser screw compressor 22 kW', 'box', 'lp', 0.98, 0.62, 1.00, 0.60, 0.40, 0, 0),
+      I('D-01', 'Refrigerated dryer', 'box', 'lp', 0.85, 0.65, 1.00, 1.95, 0.40, 0, 0),
+      I('R-01', 'LP receiver + F-01 A/B filters', 'cyl-v', 'lp', 0.60, 0.60, 1.60, 3.10, 0.40, 0, 0),
+      I('MEM-01', 'Membrane skid (wall) + heater + AC guard', 'wall-panel', 'ean', 1.60, 0.40, 1.20, 4.10, 0.05, 0.80, 0),
+      I('C-01', 'Bauer PE-VE HP compressor', 'box', 'hp', 0.79, 0.77, 1.72, 0.80, 2.60, 0, 0),
+      I('C-02', 'Bauer PE-VE HP compressor', 'box', 'hp', 0.79, 0.77, 1.72, 2.40, 2.60, 0, 0),
+      I('E-01', 'Chiller / final cooler', 'box', 'hp', 0.90, 0.50, 0.95, 3.80, 2.60, 0, 0),
+      I('F-02', 'Filtration panel 3×P61 + P41 Securus (wall)', 'wall-panel', 'hp', 1.40, 0.35, 1.60, 0.05, 3.80, 0.30, 90),
+      I('BANK-A', 'Air cascade rack 4×50 L · 300 bar — chained to the wall at ⅓ and ⅔ height', 'cyl-rack', 'hp', 1.10, 0.35, 1.80, 5.60, 0.15, 0, 0),
+      I('BANK-N', 'EAN32 cascade rack 4×50 L · 300 bar — chained to the wall at ⅓ and ⅔ height', 'cyl-rack', 'ean', 1.10, 0.35, 1.80, 7.70, 0.15, 0, 0),
+      I('O2-01', 'Oxygen cascade rack 4×50 L · 200 bar (O₂-clean)', 'cyl-rack', 'o2', 1.10, 0.35, 1.80, 9.30, 0.15, 0, 0),
+      I('HE-01', 'Helium cascade rack 2×50 L · 200 bar', 'cyl-rack', 'he', 0.60, 0.35, 1.80, 11.20, 0.15, 0, 0),
+      I('BST-01', 'USUN GBD40-OL booster — WALL-MOUNTED unit (O₂-clean)', 'wall-panel', 'o2', 0.75, 0.45, 0.50, 11.60, 2.30, 1.20, 90),
+      I('AT-03', 'DE-OX SUB analyzer + LBL-01 printer (bench — electrical: kept OUTSIDE the O₂ separation ring)', 'box', 'x', 0.60, 0.40, 0.35, 10.90, 3.60, 0.75, 0, { bench: true }),
+      I('FP-01', 'Fill & blending panel (wall)', 'wall-panel', 'hp', 1.20, 0.25, 0.90, 11.70, 2.30, 1.00, 90),
+      I('BAY-01', 'Cylinder fill / staging bay', 'area', 'x', 2.60, 2.20, 0.02, 9.20, 4.30, 0, 0),
+      I('DOOR-01', 'Personnel door 1.2 m — opens outward (egress; keep path clear)', 'door', 'x', 1.20, 0.15, 2.10, 0.40, 9.85, 0, 0),
+    ],
+    hoses: [
+      { id: 'H-01', from: 'IN-01', to: 'K-01', kind: 'amb' },
+      { id: 'H-02', from: 'K-01', to: 'D-01', kind: 'lp' },
+      { id: 'H-03', from: 'D-01', to: 'R-01', kind: 'lp' },
+      { id: 'H-04', from: 'R-01', to: 'MEM-01', kind: 'lp' },
+      { id: 'H-05', from: 'R-01', to: 'BST-01', kind: 'drv' },
+      { id: 'H-06', from: 'MEM-01', to: 'C-01', kind: 'ean' },
+      { id: 'H-07', from: 'MEM-01', to: 'C-02', kind: 'ean' },
+      { id: 'H-08', from: 'C-01', to: 'E-01', kind: 'hp' },
+      { id: 'H-09', from: 'C-02', to: 'E-01', kind: 'hp' },
+      { id: 'H-10', from: 'E-01', to: 'F-02', kind: 'hp' },
+      { id: 'H-11', from: 'F-02', to: 'BANK-A', kind: 'hp' },
+      { id: 'H-12', from: 'F-02', to: 'BANK-N', kind: 'ean' },
+      { id: 'H-13', from: 'F-02', to: 'FP-01', kind: 'hp' },
+      { id: 'H-14', from: 'BANK-A', to: 'FP-01', kind: 'hp' },
+      { id: 'H-15', from: 'BANK-N', to: 'FP-01', kind: 'ean' },
+      { id: 'H-16', from: 'O2-01', to: 'BST-01', kind: 'o2' },
+      { id: 'H-17', from: 'HE-01', to: 'BST-01', kind: 'he' },
+      { id: 'H-18', from: 'BST-01', to: 'FP-01', kind: 'o2' },
+      { id: 'H-19', from: 'O2-01', to: 'FP-01', kind: 'o2' },
+      { id: 'H-20', from: 'HE-01', to: 'FP-01', kind: 'he' },
+      { id: 'H-21', from: 'FP-01', to: 'AT-03', kind: 'sig' },
+      { id: 'H-22', from: 'HOOD-01', to: 'VF-02', kind: 'duct' },
+    ],
+  };
+}
+
+const state = { scene: defaultScene(), selectedId: null, drag: null, undoSnap: null };
+
+/* ---------- geometry ---------- */
+const fx = (it) => (it.rot % 180 === 0) ? it.w : it.d;   // placed footprint extent along x
+const fy = (it) => (it.rot % 180 === 0) ? it.d : it.w;   // placed footprint extent along y
+const byId = (id) => state.scene.items.find((i) => i.id === id);
+const snap = (v, q = 0.1) => Math.round(Math.round(v / q) * q * 100) / 100;
+const clamp = (v, lo, hi) => Math.round(Math.min(Math.max(v, lo), Math.max(lo, hi)) * 100) / 100;
+
+/* movement bounds: room interior, or the outdoor apron for outdoor items */
+function bounds(it) {
+  const A = APRON();
+  return it.outdoor
+    ? { x0: 0, x1: RM().w + 0.2, y0: A.y0, y1: A.y1 }
+    : { x0: 0, x1: RM().w, y0: 0, y1: RM().d };
+}
+
+/* hose anchors: facing-face midpoints on the dominant horizontal axis, at mid-height */
+function hoseAnchors(a, b) {
+  const acx = a.x + fx(a) / 2, acy = a.y + fy(a) / 2;
+  const bcx = b.x + fx(b) / 2, bcy = b.y + fy(b) / 2;
+  const az = a.z + a.h / 2, bz = b.z + b.h / 2;
+  let A, B;
+  if (Math.abs(bcx - acx) >= Math.abs(bcy - acy)) {   // east-west dominant
+    A = { x: bcx > acx ? a.x + fx(a) : a.x, y: acy, z: az };
+    B = { x: bcx > acx ? b.x : b.x + fx(b), y: bcy, z: bz };
+  } else {                                            // north-south dominant
+    A = { x: acx, y: bcy > acy ? a.y + fy(a) : a.y, z: az };
+    B = { x: bcx, y: bcy > acy ? b.y : b.y + fy(b), z: bz };
+  }
+  return [A, B];
+}
+
+/* Orthogonal routing: short local runs stay at equipment level; everything
+   else runs the WALL TRAY — rise to wall-run height, perpendicular out to the
+   nearest wall, along the room perimeter in service lanes, drop at the target.
+   Every segment is axis-aligned — no diagonals in any projection. */
+function routePath(h, idx) {
+  const a = byId(h.from), b = byId(h.to);
+  if (!a || !b) return null;
+  const [A, B] = hoseAnchors(a, b);
+  const dxy = Math.abs(B.x - A.x) + Math.abs(B.y - A.y);
+  const bothO2Bay = GROUP_O2.includes(a.id) && GROUP_O2.includes(b.id);
+  const bothOutdoor = a.outdoor && b.outdoor;
+  // O2-bay internal runs stay short at wall level (O2 practice: minimise length
+  // and elbows); outdoor fuel runs stay at grade, never on the indoor rack.
+  if (bothOutdoor || bothO2Bay || (dxy < 3.0 && Math.abs(A.z - B.z) < 1.2)) {
+    const z = bothOutdoor ? 0.3
+      : bothO2Bay ? Math.min(2.2, Math.max(A.z, B.z) + 0.3)
+      : Math.round(((A.z + B.z) / 2) * 100) / 100;
+    return [
+      { x: A.x, y: A.y, z: A.z }, { x: A.x, y: A.y, z },
+      { x: B.x, y: A.y, z }, { x: B.x, y: B.y, z },
+      { x: B.x, y: B.y, z: B.z },
+    ];
+  }
+  // WALL-TRAY ROUTING: every long run rises to wall-run height, goes
+  // perpendicular to its item's nearest wall, then travels the room PERIMETER
+  // in a common tray (shortest way round, corners included) and drops at the
+  // target. Services share the tray in fixed lanes measured off the wall —
+  // oil-bearing air nearest the wall, oxidisers (O2/He/EAN32) outboard with
+  // >=0.28 m of separation from anything oil-wetted. Fuel never enters.
+  const OFF = { amb: 0.06, lp: 0.10, drv: 0.10, vnt: 0.14, x: 0.18, hp: 0.22, sig: 0.26, ean: 0.30, he: 0.34, o2: 0.38, duct: 0.46 };
+  const off = OFF[h.kind] ?? 0.2;
+  const zr = RACK();
+  const Wd = RM().w, Dd = RM().d;
+  const nearestWall = (pt) => {
+    const c = [['W', pt.x], ['E', Wd - pt.x], ['N', pt.y], ['S', Dd - pt.y]];
+    c.sort((m, n) => m[1] - n[1]);
+    return c[0][0];
+  };
+  const wallPoint = (pt, wall) => (
+    wall === 'N' ? { x: pt.x, y: off } :
+    wall === 'S' ? { x: pt.x, y: Dd - off } :
+    wall === 'W' ? { x: off, y: pt.y } : { x: Wd - off, y: pt.y });
+  const wa = nearestWall(A), wb = nearestWall(B);
+  const A2 = wallPoint(A, wa), B2 = wallPoint(B, wb);
+  let run;
+  if (wa === wb) run = [A2, B2];
+  else {
+    const C = { NE: { x: Wd - off, y: off }, SE: { x: Wd - off, y: Dd - off },
+                SW: { x: off, y: Dd - off }, NW: { x: off, y: off } };
+    const build = (next, cornerOf) => {
+      const pts = [A2]; let w = wa, guard = 0;
+      while (w !== wb && guard++ < 4) { pts.push(C[cornerOf[w]]); w = next[w]; }
+      pts.push(B2); return pts;
+    };
+    const cw = build({ N: 'E', E: 'S', S: 'W', W: 'N' }, { N: 'NE', E: 'SE', S: 'SW', W: 'NW' });
+    const ccw = build({ N: 'W', W: 'S', S: 'E', E: 'N' }, { N: 'NW', W: 'SW', S: 'SE', E: 'NE' });
+    const plen = (pts) => pts.reduce((t, q, k) => k ? t + Math.abs(q.x - pts[k - 1].x) + Math.abs(q.y - pts[k - 1].y) : 0, 0);
+    run = plen(cw) <= plen(ccw) ? cw : ccw;
+  }
+  void idx;
+  const path = [{ x: A.x, y: A.y, z: A.z }, { x: A.x, y: A.y, z: zr }];
+  for (const q of run) path.push({ x: q.x, y: q.y, z: zr });
+  path.push({ x: B.x, y: B.y, z: zr });
+  path.push({ x: B.x, y: B.y, z: B.z });
+  return path;
+}
+function hoseLen(h, idx) {
+  const path = routePath(h, idx || 0);
+  if (!path) return 0;
+  let L = 0;
+  for (let i = 1; i < path.length; i++) {
+    L += Math.abs(path[i].x - path[i - 1].x) + Math.abs(path[i].y - path[i - 1].y) + Math.abs(path[i].z - path[i - 1].z);
+  }
+  const withSlack = Math.max(L * 1.15, L + 0.5);   // +15% (bends, clamps, service loops) or at least 0.5 m
+  return Math.ceil(withSlack / 0.5) * 0.5;
+}
+
+/* ---------- svg helpers ---------- */
+function el(name, attrs = {}, parent) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent, x, y, str, o = {}) {
+  const t = el('text', {
+    x, y, fill: o.color || INK, 'font-size': o.size || 10,
+    'text-anchor': o.anchor || 'middle',
+    'font-family': o.mono === false ? 'Helvetica Neue,Arial,sans-serif' : 'ui-monospace,Menlo,monospace',
+    'font-weight': o.weight || 600, 'letter-spacing': o.ls || 0,
+  }, parent);
+  t.textContent = str;
+  return t;
+}
+
+/* ---------- view descriptors ---------- */
+/* h = horizontal world axis, v = vertical; elevations flip z */
+const VIEWS = {
+  top:   { svg: null, id: 'viewTop',   H: (w) => (w - WX0) * S, hAxis: 'x', vAxis: 'y',
+           V: (w) => (w - WY0) * S, extH: fx, extV: fy, elev: false,
+           vb: () => [(WX1() - WX0) * S, (WY1() - WY0) * S] },
+  front: { svg: null, id: 'viewFront', H: (w) => (w - WX0) * S, hAxis: 'x', vAxis: 'z',
+           V: (w) => (ZTOP() - w) * S, extH: fx, extV: (it) => it.h, elev: true,
+           vb: () => [(WX1() - WX0) * S, (ZTOP() + 0.2) * S] },
+  side:  { svg: null, id: 'viewSide',  H: (w) => (w - WY0) * S, hAxis: 'y', vAxis: 'z',
+           V: (w) => (ZTOP() - w) * S, extH: fy, extV: (it) => it.h, elev: true,
+           vb: () => [(WY1() - WY0) * S, (ZTOP() + 0.2) * S] },
+};
+for (const k in VIEWS) VIEWS[k].svg = document.getElementById(VIEWS[k].id);
+
+/* ---------- renderers ---------- */
+const GROUP_M1 = ['K-01', 'D-01', 'R-01', 'MEM-01', 'C-01', 'C-02', 'E-01', 'F-02', 'VF-01', 'VF-02', 'HOOD-01'];
+const GROUP_O2 = ['O2-01', 'HE-01', 'BST-01', 'AT-03', 'FP-01'];
+function bboxOf(ids) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, found = false;
+  for (const id of ids) {
+    const it = byId(id);
+    if (!it || it.outdoor) continue;
+    found = true;
+    x0 = Math.min(x0, it.x); y0 = Math.min(y0, it.y);
+    x1 = Math.max(x1, it.x + fx(it)); y1 = Math.max(y1, it.y + fy(it));
+  }
+  return found ? { x0, y0, x1, y1 } : null;
+}
+function pad(b, m) {
+  return { x0: Math.max(0, b.x0 - m), y0: Math.max(0, b.y0 - m),
+           x1: Math.min(RM().w, b.x1 + m), y1: Math.min(RM().d, b.y1 + m) };
+}
+
+function renderGridTop(svg) {
+  const V = VIEWS.top;
+  const A = APRON();
+  // 0.5 m grid over room + apron
+  for (let m = 0; m <= RM().w + 0.2 + 0.001; m += 0.5) {
+    const x = V.H(m);
+    el('path', { d: `M${x},${V.V(0)} L${x},${V.V(A.y1)}`, stroke: m % 1 ? '#f0f3f7' : '#e3e8ef', 'stroke-width': 1 }, svg);
+  }
+  for (let m = 0; m <= A.y1 + 0.001; m += 0.5) {
+    const y = V.V(m);
+    el('path', { d: `M${V.H(0)},${y} L${V.H(RM().w + 0.2)},${y}`, stroke: m % 1 ? '#f0f3f7' : '#e3e8ef', 'stroke-width': 1 }, svg);
+  }
+  // zone tints derived from where the equipment actually is
+  const m1 = bboxOf(GROUP_M1);
+  if (m1) {
+    const z = pad(m1, 0.35);
+    el('rect', { x: V.H(z.x0), y: V.V(z.y0), width: (z.x1 - z.x0) * S, height: (z.y1 - z.y0) * S,
+      fill: '#c2700d', opacity: 0.04 }, svg);
+  }
+  const o2b = bboxOf(GROUP_O2);
+  if (o2b) {
+    const z = pad(o2b, 0.4);
+    el('rect', { x: V.H(z.x0), y: V.V(z.y0), width: (z.x1 - z.x0) * S, height: (z.y1 - z.y0) * S,
+      fill: '#b91c1c', opacity: 0.03 }, svg);
+    el('rect', { x: V.H(z.x0), y: V.V(z.y0), width: (z.x1 - z.x0) * S, height: (z.y1 - z.y0) * S,
+      fill: 'none', stroke: '#b91c1c', 'stroke-width': 1.3, 'stroke-dasharray': '9 6' }, svg);
+    txt(svg, V.H((z.x0 + z.x1) / 2), V.V(z.y1) - 5, 'O₂-CLEAN BAY', { size: 9, color: '#b91c1c' });
+  }
+  // room walls (double line)
+  el('rect', { x: V.H(0), y: V.V(0), width: RM().w * S, height: RM().d * S, fill: 'none', stroke: INK, 'stroke-width': 3 }, svg);
+  el('rect', { x: V.H(-0.12), y: V.V(-0.12), width: (RM().w + 0.24) * S, height: (RM().d + 0.24) * S, fill: 'none', stroke: INK, 'stroke-width': 1 }, svg);
+  txt(svg, V.H(RM().w / 2), V.V(-0.25), `${RM().w.toFixed(1)} × ${RM().d.toFixed(1)} m`, { size: 9, color: '#5b6b7d' });
+  // outdoor apron (only when outdoor plant exists)
+  if (hasOutdoor()) {
+    el('rect', { x: V.H(0), y: V.V(A.y0), width: (RM().w + 0.2) * S, height: (A.y1 - A.y0) * S,
+      fill: '#8b93a1', opacity: 0.06 }, svg);
+    el('rect', { x: V.H(0), y: V.V(A.y0), width: (RM().w + 0.2) * S, height: (A.y1 - A.y0) * S,
+      fill: 'none', stroke: '#8b93a1', 'stroke-width': 1, 'stroke-dasharray': '4 4' }, svg);
+    txt(svg, V.H(0.3), V.V(A.y0 + 0.35), 'OUTDOOR', { size: 8.5, color: '#5b6b7d', anchor: 'start' });
+  }
+  // wind arrow (west margin)
+  const wy = V.V(RM().d * 0.6), wx = V.H(-0.52);
+  el('path', { d: `M${wx},${wy} L${wx + 20},${wy}`, stroke: '#5b6b7d', 'stroke-width': 1.6 }, svg);
+  el('path', { d: `M${wx + 20},${wy - 4} L${wx + 27},${wy} L${wx + 20},${wy + 4} Z`, fill: '#5b6b7d' }, svg);
+  txt(svg, wx + 4, wy + 14, 'WIND', { size: 7.5, color: '#5b6b7d', anchor: 'start' });
+  // O₂ storage separation ring (ISO/EIGA practice) around the O₂ cascade
+  const o2 = byId('O2-01');
+  if (o2) {
+    const cx = V.H(o2.x + fx(o2) / 2), cy = V.V(o2.y + fy(o2) / 2);
+    el('circle', { cx, cy, r: 3.0 * S, fill: 'none', stroke: '#b91c1c', 'stroke-width': 1.1, 'stroke-dasharray': '4 5', opacity: 0.7 }, svg);
+    txt(svg, Math.max(130, Math.min(cx, (WX1() - WX0) * S - 130)), cy + 3.0 * S + 11, 'O₂ SEPARATION ≥3.0 m · ISO/EIGA', { size: 7.5, color: '#b91c1c' });
+  }
+  // inter-cascade dimension hint between BANK-A and BANK-N
+  const a = byId('BANK-A'), n = byId('BANK-N');
+  if (a && n) {
+    const gap = Math.max(0, n.y - (a.y + fy(a)));
+    const x = V.H(Math.max(a.x, n.x) + Math.max(fx(a), fx(n)) + 0.25);
+    const y1 = V.V(a.y + fy(a)), y2 = V.V(n.y);
+    el('path', { d: `M${x},${y1} L${x},${y2}`, stroke: '#b91c1c', 'stroke-width': 1 }, svg);
+    el('path', { d: `M${x - 3},${y1 + 5} L${x},${y1} L${x + 3},${y1 + 5} M${x - 3},${y2 - 5} L${x},${y2} L${x + 3},${y2 - 5}`,
+      fill: 'none', stroke: '#b91c1c', 'stroke-width': 1 }, svg);
+    txt(svg, x + 5, (y1 + y2) / 2 + 3, `${gap.toFixed(2)} m (≥1.0)`, {
+      size: 7.5, color: gap >= 1.0 ? '#b91c1c' : '#dc2626', anchor: 'start', weight: gap >= 1.0 ? 500 : 700 });
+  }
+}
+
+function renderGridElev(svg, view) {
+  const V = view;
+  const wmax = view === VIEWS.front ? RM().w + 0.2 : APRON().y1;
+  for (let m = 0; m <= wmax + 0.001; m += 0.5) {
+    const x = V.H(m);
+    el('path', { d: `M${x},${V.V(RM().h)} L${x},${V.V(0)}`, stroke: m % 1 ? '#f0f3f7' : '#e3e8ef', 'stroke-width': 1 }, svg);
+  }
+  for (let m = 0; m <= RM().h + 0.001; m += 0.5) {
+    const y = V.V(m);
+    el('path', { d: `M${V.H(0)},${y} L${V.H(wmax)},${y}`, stroke: m % 1 ? '#f0f3f7' : '#e3e8ef', 'stroke-width': 1 }, svg);
+  }
+  // pipe-rack level
+  el('path', { d: `M${V.H(0)},${V.V(RACK())} L${V.H(wmax)},${V.V(RACK())}`,
+    stroke: '#9aa4b0', 'stroke-width': 1, 'stroke-dasharray': '2 5' }, svg);
+  txt(svg, V.H(wmax) - 4, V.V(RACK()) - 4, `RACK ${RACK().toFixed(1)} m`, { size: 6.5, color: '#9aa4b0', anchor: 'end' });
+  // floor + ground hatch
+  el('path', { d: `M${V.H(-0.4)},${V.V(0)} L${V.H(wmax + 0.4)},${V.V(0)}`, stroke: INK, 'stroke-width': 2.5 }, svg);
+  for (let m = -0.3; m <= wmax + 0.3; m += 0.35) {
+    el('path', { d: `M${V.H(m)},${V.V(0)} l-8,10`, stroke: '#9aa4b0', 'stroke-width': 1 }, svg);
+  }
+  // ceiling
+  el('path', { d: `M${V.H(0)},${V.V(RM().h)} L${V.H(view === VIEWS.front ? RM().w : RM().d)},${V.V(RM().h)}`,
+    stroke: INK, 'stroke-width': 1.2, 'stroke-dasharray': '8 5' }, svg);
+  txt(svg, V.H(0.15), V.V(RM().h) - 5, `CEILING ${RM().h.toFixed(1)} m`, { size: 7.5, color: '#5b6b7d', anchor: 'start' });
+  // side view: mark the south wall + apron beyond it
+  if (view === VIEWS.side) {
+    el('path', { d: `M${V.H(RM().d)},${V.V(RM().h)} L${V.H(RM().d)},${V.V(0)}`, stroke: INK, 'stroke-width': 2 }, svg);
+    txt(svg, V.H(RM().d) + 5, V.V(RM().h) + 12, 'S WALL', { size: 7, color: '#5b6b7d', anchor: 'start' });
+    if (hasOutdoor()) txt(svg, V.H(APRON().y0 + 1), V.V(0) - 6, 'OUTDOOR', { size: 7.5, color: '#8b93a1' });
+  }
+}
+
+function renderHoses(svg, viewKey) {
+  const V = VIEWS[viewKey];
+  state.scene.hoses.forEach((h, idx) => {
+    const path = routePath(h, idx);
+    if (!path) return;
+    const color = KIND[h.kind] || INK;
+    const sel = state.selectedId && (h.from === state.selectedId || h.to === state.selectedId);
+    const attrs = { fill: 'none', stroke: color, 'stroke-width': h.kind === 'duct' ? 4 : (sel ? 3 : 1.5),
+      opacity: h.kind === 'duct' ? 0.4 : (sel ? 0.95 : 0.5), 'stroke-linejoin': 'round' };
+    if (DASHED[h.kind]) attrs['stroke-dasharray'] = DASHED[h.kind];
+    // project the 3D polyline into this view, dropping zero-length screen segments
+    const pts = [];
+    for (const p of path) {
+      const sx = viewKey === 'side' ? V.H(p.y) : V.H(p.x);
+      const sy = viewKey === 'top' ? V.V(p.y) : V.V(p.z);
+      const last = pts[pts.length - 1];
+      if (!last || Math.abs(last[0] - sx) > 0.01 || Math.abs(last[1] - sy) > 0.01) pts.push([sx, sy]);
+    }
+    if (pts.length < 2) return;
+    el('path', Object.assign({ d: 'M' + pts.map((p) => p.join(',')).join(' L') }, attrs), svg);
+  });
+}
+
+function renderItems(svg, viewKey) {
+  const V = VIEWS[viewKey];
+  const items = [...state.scene.items].sort((p, q) =>
+    (p.id === state.selectedId ? 1 : 0) - (q.id === state.selectedId ? 1 : 0));
+  for (const it of items) {
+    const color = KIND[it.kind] || INK;
+    const selected = it.id === state.selectedId;
+    const hw = V.extH(it) * S, hh = V.extV(it) * S;
+    let px, py;
+    if (viewKey === 'top') { px = V.H(it.x); py = V.V(it.y); }
+    else if (viewKey === 'front') { px = V.H(it.x); py = V.V(it.z + it.h); }
+    else { px = V.H(it.y); py = V.V(it.z + it.h); }
+
+    const g = el('g', { 'data-id': it.id }, svg);
+    g.setAttribute('data-tip', `${it.id} — ${it.label} · ${it.w}×${it.d}×${it.h} m`);
+    g.style.cursor = it.fixed ? 'default' : 'move';
+
+    // bench under bench items in elevations
+    if (it.bench && V.elev) {
+      el('rect', { x: px - 3, y: V.V(it.z), width: hw + 6, height: (it.z) * S, fill: 'none',
+        stroke: '#9aa4b0', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, g);
+    }
+    const rectAttrs = {
+      x: px, y: py, width: Math.max(hw, 4), height: Math.max(hh, 4), rx: 2,
+      fill: '#fff', stroke: selected ? 'var(--accent, #1d4ed8)' : color,
+      'stroke-width': selected ? 2.6 : 1.8,
+    };
+    if (viewKey === 'top' && it.z > 0.05) { rectAttrs['stroke-dasharray'] = '5 3'; rectAttrs.opacity = 0.9; }
+    if (it.outdoor && viewKey === 'front') { rectAttrs.opacity = 0.45; }
+    if (it.type === 'area') { rectAttrs.fill = 'none'; rectAttrs['stroke-dasharray'] = '6 4'; }
+    el('rect', rectAttrs, g);
+    if (selected) {
+      el('rect', { x: px - 3.5, y: py - 3.5, width: Math.max(hw, 4) + 7, height: Math.max(hh, 4) + 7, rx: 4,
+        fill: 'none', stroke: 'var(--accent, #1d4ed8)', 'stroke-width': 1, opacity: 0.45, 'stroke-dasharray': '3 3' }, g);
+    }
+
+    // cylinder glyphs for racks (top: circles; elevations: verticals)
+    if (it.type === 'cyl-rack') {
+      const n = it.id === 'HE-01' ? 2 : 4;
+      for (let i = 0; i < n; i++) {
+        if (viewKey === 'top') {
+          const along = V.extH(it) >= V.extV(it) ? 'h' : 'v';
+          const step = (along === 'h' ? hw : hh) / n;
+          const cx = along === 'h' ? px + step * (i + 0.5) : px + hw / 2;
+          const cy = along === 'h' ? py + hh / 2 : py + step * (i + 0.5);
+          el('circle', { cx, cy, r: Math.min(hw, hh) / 2 - 1.5, fill: 'none', stroke: color, 'stroke-width': 1 }, g);
+        } else {
+          const step = hw / n;
+          el('path', { d: `M${px + step * (i + 0.5)},${py + 3} L${px + step * (i + 0.5)},${py + hh - 3}`,
+            stroke: color, 'stroke-width': 1, opacity: 0.5 }, g);
+        }
+      }
+    }
+    if (it.type === 'cyl-v' && viewKey === 'top') {
+      el('circle', { cx: px + hw / 2, cy: py + hh / 2, r: hw / 2 - 1.5, fill: 'none', stroke: color, 'stroke-width': 1 }, g);
+    }
+
+    // id label: inside if it fits, else beside (racks always label outside — glyphs fill them)
+    const fits = hw >= 46 && hh >= 16 && it.type !== 'cyl-rack';
+    if (fits) txt(g, px + hw / 2, py + hh / 2 + 3.5, it.id, { size: 9.5, color });
+    else txt(g, px + hw / 2, py - 4, it.id, { size: 8.5, color });
+    if (it.outdoor && viewKey === 'front') txt(g, px + hw / 2, py + hh + 10, 'OUTDOOR', { size: 6.5, color: '#8b93a1' });
+  }
+}
+
+function renderView(viewKey) {
+  const V = VIEWS[viewKey];
+  const svg = V.svg;
+  const [vw, vh] = V.vb();
+  svg.setAttribute('viewBox', `0 0 ${Math.round(vw)} ${Math.round(vh)}`);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  el('rect', { x: 0, y: 0, width: Math.round(vw), height: Math.round(vh), fill: '#fff' }, svg);
+  if (viewKey === 'top') renderGridTop(svg); else renderGridElev(svg, V);
+  renderHoses(svg, viewKey);
+  renderItems(svg, viewKey);
+}
+
+function renderInspector() {
+  const box = document.getElementById('inspector');
+  const it = state.selectedId ? byId(state.selectedId) : null;
+  const focused = document.activeElement;
+  if (!it) {
+    box.innerHTML = '<h3>Selection</h3><div class="empty">Click any equipment to select it.</div>';
+    return;
+  }
+  // Rebuild only when not editing one of our inputs (focus guard)
+  if (focused && box.contains(focused) && focused.tagName === 'INPUT') {
+    // update non-focused inputs only
+    for (const ax of ['x', 'y', 'z']) {
+      const inp = document.getElementById('insp-' + ax);
+      if (inp && inp !== focused) inp.value = it[ax];
+    }
+    return;
+  }
+  box.innerHTML = `<h3>Selection</h3>
+    <div class="tag-line">${it.id}</div>
+    <div class="name-line">${it.label}</div>
+    <div class="dims">${it.w} × ${it.d} × ${it.h} m · rot ${it.rot}° · footprint ${fx(it)} × ${fy(it)} m${it.bench ? ' · bench' : ''}${it.outdoor ? ' · outdoor' : ''}</div>
+    <div class="coords">
+      ${['x', 'y', 'z'].map((ax) => `<div><label for="insp-${ax}">${ax.toUpperCase()} (m)</label>
+        <input id="insp-${ax}" type="number" step="0.1" value="${it[ax]}"></div>`).join('')}
+    </div>
+    <div class="btn-row">
+      <button type="button" id="insp-rot">⟳ Rotate 90°</button>
+      <button type="button" id="insp-desel">Deselect</button>
+    </div>
+    <div class="hint">Arrows nudge 0.1 m (⇧ 0.5) · [ ] adjust height · R rotate · Esc deselect · ⌘Z undo</div>`;
+  for (const ax of ['x', 'y', 'z']) {
+    document.getElementById('insp-' + ax).addEventListener('input', (e) => {
+      // NB: a number input sanitises junk to '' and Number('') === 0 — reject empties explicitly
+      if (e.target.value.trim() === '') return;
+      const v = Number(e.target.value);
+      if (!Number.isFinite(v)) return;
+      const b = bounds(it);
+      if (ax === 'x') it.x = clamp(snap(v), b.x0, b.x1 - fx(it));
+      else if (ax === 'y') it.y = clamp(snap(v), b.y0, b.y1 - fy(it));
+      else it.z = clamp(snap(v), 0, RM().h - it.h);
+      commit(false);
+    });
+  }
+  document.getElementById('insp-rot').addEventListener('click', () => rotateSelected());
+  document.getElementById('insp-desel').addEventListener('click', () => { state.selectedId = null; commit(false); });
+}
+
+function renderBOM() {
+  const box = document.getElementById('bom');
+  const groups = {};
+  for (const h of state.scene.hoses) {
+    (groups[h.kind] = groups[h.kind] || []).push(h);
+  }
+  const NAME = { lp: 'LP air', hp: 'HP air 300 bar', ean: 'EAN32', o2: 'Oxygen (O₂-clean)', he: 'Helium',
+    drv: 'Drive air', amb: 'Intake duct', sig: 'Signal', x: 'Misc', vnt: 'Vent', duct: 'HVAC extract duct' };
+  const idxOf = new Map(state.scene.hoses.map((h, i) => [h.id, i]));
+  let rows = '', grand = 0;
+  for (const kind of Object.keys(groups)) {
+    let sub = 0;
+    for (const h of groups[kind]) {
+      const L = hoseLen(h, idxOf.get(h.id));
+      sub += L;
+      const a = byId(h.from), b = byId(h.to);
+      rows += `<tr><td class="mono">${h.id}</td><td class="mono">${h.from} → ${h.to}</td>
+        <td class="mono" style="text-align:right">${L.toFixed(1)} m</td></tr>`;
+      void a; void b;
+    }
+    grand += sub;
+    rows += `<tr class="sub"><td colspan="2"><span class="swatch" style="background:${KIND[kind]}"></span>${NAME[kind] || kind} subtotal</td>
+      <td class="mono" style="text-align:right">${sub.toFixed(1)} m</td></tr>`;
+  }
+  rows += `<tr class="grand"><td colspan="2">Total hose / pipe run (incl. 15% slack)</td>
+    <td class="mono" style="text-align:right">${grand.toFixed(1)} m</td></tr>`;
+  box.innerHTML = `<h3>Hose schedule</h3><table>
+    <thead><tr><th>ID</th><th>Run</th><th style="text-align:right">Length</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+let raf = 0;
+function renderAll() {
+  renderView('top'); renderView('front'); renderView('side');
+  renderInspector(); renderBOM();
+}
+function scheduleRender() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; renderAll(); });
+}
+
+/* ---------- persistence ---------- */
+const LS_KEY = 'bsd-layout-v1';
+function commit(save = true) {
+  scheduleRender();
+  if (save) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state.scene)); }
+    catch (e) { console.warn('autosave unavailable:', e); }
+  }
+}
+
+/* fail-loud validator — shared by boot-load and Import */
+function validateScene(o) {
+  const err = (m) => { throw new Error(m); };
+  if (!o || typeof o !== 'object') err('not an object');
+  if (o.schemaVersion !== 1) err(`schemaVersion ${o.schemaVersion} (expected 1)`);
+  if (!o.room || typeof o.room.w !== 'number' || typeof o.room.d !== 'number' || typeof o.room.h !== 'number')
+    err('room.w/d/h must be numbers');
+  if (!Array.isArray(o.items) || !o.items.length) err('items missing');
+  const ids = new Set();
+  for (const it of o.items) {
+    for (const f of ['id', 'label', 'type', 'kind']) if (typeof it[f] !== 'string') err(`item ${it.id || '?'}: ${f} must be a string`);
+    for (const f of ['w', 'd', 'h', 'x', 'y', 'z']) if (!Number.isFinite(it[f])) err(`item ${it.id}: ${f} must be a number`);
+    if (![0, 90, 180, 270].includes(it.rot)) err(`item ${it.id}: rot ${it.rot} not in 0/90/180/270`);
+    if (ids.has(it.id)) err(`duplicate item id ${it.id}`);
+    ids.add(it.id);
+  }
+  if (!Array.isArray(o.hoses)) err('hoses missing');
+  for (const h of o.hoses) {
+    if (!ids.has(h.from)) err(`hose ${h.id}: from "${h.from}" not an item`);
+    if (!ids.has(h.to)) err(`hose ${h.id}: to "${h.to}" not an item`);
+  }
+  return o;
+}
+const RETIRED = new Set(['DG-01', 'DG-02', 'FT-01']);
+function migrate(scene) {
+  scene.items = scene.items.filter((i) => !RETIRED.has(i.id));
+  scene.hoses = scene.hoses.filter((h) => !RETIRED.has(h.from) && !RETIRED.has(h.to));
+  return scene;
+}
+function loadStored() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    return migrate(validateScene(JSON.parse(raw)));
+  } catch (e) {
+    console.error('stored layout invalid — falling back to reference layout:', e.message);
+    return null;
+  }
+}
+
+/* ---------- interaction ---------- */
+function rotateSelected() {
+  const it = state.selectedId && byId(state.selectedId);
+  if (!it || it.fixed) return;
+  state.undoSnap = structuredClone(state.scene);
+  const cx = it.x + fx(it) / 2, cy = it.y + fy(it) / 2;
+  it.rot = (it.rot + 90) % 360;
+  const b = bounds(it);
+  it.x = clamp(snap(cx - fx(it) / 2), b.x0, b.x1 - fx(it));
+  it.y = clamp(snap(cy - fy(it) / 2), b.y0, b.y1 - fy(it));
+  commit();
+}
+
+function bindView(viewKey) {
+  const V = VIEWS[viewKey];
+  const svg = V.svg;
+  const toSvg = (ev) => new DOMPoint(ev.clientX, ev.clientY).matrixTransform(svg.getScreenCTM().inverse());
+
+  svg.addEventListener('pointerdown', (e) => {
+    const g = e.target instanceof Element ? e.target.closest('[data-id]') : null;
+    if (!g) { state.selectedId = null; commit(false); return; }
+    const it = byId(g.getAttribute('data-id'));
+    state.selectedId = it.id;
+    if (it.fixed) { commit(false); return; }
+    const p0 = toSvg(e);
+    // plane coords this view edits
+    const A = V.hAxis, B = V.vAxis;
+    state.undoSnap = structuredClone(state.scene);
+    state.drag = { id: it.id, view: viewKey, p0, a0: it[A], b0: it[B], moved: false };
+    svg.setPointerCapture(e.pointerId);        // capture on the persistent root
+    commit(false);
+    e.preventDefault();
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    const d = state.drag;
+    if (!d || d.view !== viewKey) {
+      // hover tooltip
+      const g = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+      if (g) { showTip(g.getAttribute('data-tip'), e.clientX, e.clientY); } else hideTip();
+      return;
+    }
+    const it = byId(d.id);
+    const p = toSvg(e);
+    const dA = (p.x - d.p0.x) / S;
+    const dB = ((p.y - d.p0.y) / S) * (V.elev ? -1 : 1);
+    if (Math.abs(dA) + Math.abs(dB) > 0.02) { d.moved = true; hideTip(); }
+    const b = bounds(it);
+    if (V.hAxis === 'x') it.x = clamp(snap(d.a0 + dA), b.x0, b.x1 - fx(it));
+    else it.y = clamp(snap(d.a0 + dA), b.y0, b.y1 - fy(it));
+    if (V.vAxis === 'y') it.y = clamp(snap(d.b0 + dB), b.y0, b.y1 - fy(it));
+    else if (V.vAxis === 'z') it.z = clamp(snap(d.b0 + dB), 0, RM().h - it.h);
+    scheduleRender();
+  });
+
+  const end = (e) => {
+    if (!state.drag || state.drag.view !== viewKey) return;
+    if (!state.drag.moved) state.undoSnap = null;   // click, not a drag — don't burn the undo slot
+    state.drag = null;
+    commit();                                        // save on drop
+    void e;
+  };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('pointerleave', hideTip);
+}
+
+/* keyboard */
+window.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { /* let inputs keep their own undo */ }
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+    if (state.undoSnap) {
+      const cur = structuredClone(state.scene);
+      state.scene = state.undoSnap;
+      state.undoSnap = cur;                          // second press = redo
+      if (state.selectedId && !byId(state.selectedId)) state.selectedId = null;
+      commit();
+    }
+    e.preventDefault();
+    return;
+  }
+  const it = state.selectedId && byId(state.selectedId);
+  if (!it) return;
+  const step = e.shiftKey ? 0.5 : 0.1;
+  const b = bounds(it);
+  let used = true;
+  if (e.key === 'ArrowLeft') it.x = clamp(snap(it.x - step), b.x0, b.x1 - fx(it));
+  else if (e.key === 'ArrowRight') it.x = clamp(snap(it.x + step), b.x0, b.x1 - fx(it));
+  else if (e.key === 'ArrowUp') it.y = clamp(snap(it.y - step), b.y0, b.y1 - fy(it));
+  else if (e.key === 'ArrowDown') it.y = clamp(snap(it.y + step), b.y0, b.y1 - fy(it));
+  else if (e.key === '[') it.z = clamp(snap(it.z - step), 0, RM().h - it.h);
+  else if (e.key === ']') it.z = clamp(snap(it.z + step), 0, RM().h - it.h);
+  else if (e.key.toLowerCase() === 'r') { rotateSelected(); return; }
+  else if (e.key === 'Escape') { state.selectedId = null; }
+  else used = false;
+  if (used) { commit(); e.preventDefault(); }
+});
+
+/* ---------- optimizer ----------
+   Tidies the CURRENT arrangement rather than imposing a fixed plan:
+   - keeps the O₂-clean bay in whichever corner the user put it (canonical
+     plan is built with the bay NE, then mirrored in x and/or y to match);
+   - re-packs each functional group into wall-hugging rows with service
+     clearances (CLR below);
+   - shrink-wraps the room to the equipment + aisle, floor 6.0×6.0 m
+     (the 3.0 m ISO/EIGA O₂ separation ring must fit indoors);
+   - inserts the ventilation fans if the scene predates them.             */
+const CLR = { unit: 0.5, service: 0.8, aisle: 1.2, wall: 0.15, cascade: 1.0, shrink: 1.2 };
+
+function optimizeLayout() {
+  state.undoSnap = structuredClone(state.scene);
+  const items = state.scene.items;
+  const get = (id) => items.find((i) => i.id === id);
+
+  // ensure the ventilation fans exist (older saved scenes predate them)
+  if (!get('VF-01')) items.push({ id: 'VF-01', label: 'Supply-air louvre + fan (low — cool air onto the compressors)',
+    type: 'wall-marker', kind: 'amb', w: 0.6, d: 0.25, h: 0.6, x: 0.05, y: 3.0, z: 0.3, rot: 90 });
+  if (!get('VF-02')) items.push({ id: 'VF-02', label: 'Ducted extract fan — pulls hot air off the compressor hood and ducts it OUTDOORS',
+    type: 'wall-marker', kind: 'amb', w: 0.6, d: 0.3, h: 0.6, x: 1.8, y: 0.05, z: 2.9, rot: 0 });
+  if (!get('HOOD-01')) items.push({ id: 'HOOD-01', label: 'Extraction hood over the compressors — captures rejected heat at source',
+    type: 'hood', kind: 'vnt', w: 2.6, d: 1.0, h: 0.45, x: 0.9, y: 2.5, z: 2.05, rot: 0 });
+  if (!state.scene.hoses.some((h) => h.kind === 'duct')) state.scene.hoses.push({ id: 'H-22', from: 'HOOD-01', to: 'VF-02', kind: 'duct' });
+
+  // The O₂ bay is PINNED to the NE corner: leeward of the west-wall intake and
+  // supply air. If the user had it elsewhere we override and say so — an
+  // oxidiser store upwind of the breathing-air intake is not a preference call.
+  const ob = bboxOf(GROUP_O2) || { x0: RM().w, x1: RM().w, y0: 0, y1: 0 };
+  const bayWasElsewhere = ((ob.x0 + ob.x1) / 2 < RM().w / 2) || ((ob.y0 + ob.y1) / 2 >= RM().d / 2);
+  // preserve the user's outdoor ordering (west→east)
+  const outdoorOrder = items.filter((i) => i.outdoor).sort((a, b) => a.x - b.x).map((i) => i.id);
+  if (!get('DOOR-01')) items.push({ id: 'DOOR-01', label: 'Personnel door 1.2 m — opens outward (egress; keep path clear)',
+    type: 'door', kind: 'x', w: 1.2, d: 0.15, h: 2.1, x: 0.4, y: RM().d - 0.15, z: 0, rot: 0 });
+
+  /* ---- canonical plan (bay NE), all positions in a scratch map ----
+     Packing uses BOTH walls: LP train + stacked cascade racks along the north
+     wall, HP row + filtration as a second row, O₂ bay as an east-wall strip.  */
+  const P = {};
+  const place = (id, x, y, z, rot) => { const it = get(id); if (it) P[id] = { x, y, z: z ?? it.z, rot: rot ?? 0 }; };
+
+  // Row A (north wall): LP production train west→east.
+  // Kaeser: >=1.0 m between the unit's cooling intake and any wall.
+  let cx = 1.0;
+  const rowAy = 0.6;
+  for (const id of ['K-01', 'D-01', 'R-01']) {
+    const it = get(id); if (!it) continue;
+    place(id, cx, rowAy, 0, 0);
+    cx += it.w + CLR.unit;
+  }
+  const trainEnd = cx;
+  place('MEM-01', 0.05, rowAy, 0.8, 90);                         // wall skid on the WEST wall, right beside the HP suction runs
+  const memEnd = trainEnd;
+
+  // Cascade racks: WEST wall (rot 90 — racks back onto structure and get
+  // chained to it; a free-standing cascade in open floor is a toppling hazard),
+  // below the membrane skid, stacked with the >=1.0 m inter-cascade gap.
+  const bankY0 = rowAy + 1.6 + 0.4;                              // below the wall-mounted membrane skid
+  place('BANK-A', CLR.wall, bankY0, 0, 90);
+  place('BANK-N', CLR.wall, bankY0 + 1.1 + CLR.cascade, 0, 90);
+  const bankEnd = 0;                                             // banks no longer consume north-wall length
+  const bankSouth = 0;
+
+  // Row B: HP compression + filtration, south of row A and the bank stack
+  const rowAdepth = Math.max(get('K-01')?.d || 0, get('D-01')?.d || 0, get('R-01')?.d || 0);
+  const rowBy = Math.round((rowAy + rowAdepth + CLR.aisle) * 10) / 10;
+  cx = 1.0;                                                      // >=0.85 m clear of the west-wall bank racks
+  for (const id of ['C-01', 'C-02', 'E-01']) {
+    const it = get(id); if (!it) continue;
+    place(id, cx, rowBy, 0, 0);
+    cx += it.w + CLR.service;
+  }
+  const rowBend = cx;
+  place('F-02', trainEnd + 0.4, 0.05, 0.3, 0);                   // filtration panel WALL-MOUNTED on the north wall
+  const northEnd = trainEnd + 0.4 + (get('F-02')?.w || 1.4);
+  // extraction hood over the compressor pair + short duct to the north-wall fan
+  place('HOOD-01', 0.9, rowBy - 0.1, 2.05, 0);
+  place('VF-02', 2.0, 0.05, RM().h - 0.7, 0);
+
+  // O₂-clean bay: an east-wall strip (racks rot 90 against the wall), bench
+  // below, analyzer pushed outside the 3.0 m ring, fill panel further south.
+  const coreEnd = Math.max(bankEnd, rowBend, northEnd, memEnd);
+  const W = Math.max(6, Math.ceil((coreEnd + CLR.aisle + 2.4) * 2) / 2);
+  const rackX = W - 0.15 - 0.35;                                 // rot-90 rack depth 0.35 on the east wall
+  place('O2-01', rackX, CLR.wall, 0, 90);
+  place('HE-01', rackX, CLR.wall + 1.1 + 0.6, 0, 90);
+  place('BST-01', W - 0.15 - 0.45, 3.0, 1.2, 90);                // WALL-MOUNTED on the east wall (O₂-clean — allowed inside the ring)
+  place('AT-03', W - 1.6, 4.4, 0.75, 0);                         // electrical bench — OUTSIDE the 3.0 m ring
+  const fpY = 5.0;
+  place('FP-01', W - 0.4, fpY, undefined, 90);
+  const bay01 = get('BAY-01');
+  place('BAY-01', W - 3.6, fpY + 0.2, 0, 0);                     // staging beside the panel frontage, off its axis
+
+  const southMost = Math.max(rowBy + (get('C-01')?.d || 0.8), fpY + 1.2, fpY + 0.2 + (bay01 ? bay01.d : 2.2));
+  const D = Math.max(6, Math.ceil((southMost + CLR.shrink) * 2) / 2);
+
+  place('VF-01', -0.1 + CLR.wall, rowBy + 1.4, 0.3, 90);         // supply louvre low on the west wall, below the bank racks' aisle
+  place('IN-01', 0.05, 0.5, 2.8, 0);                             // intake stays upwind west, high — ≥3 m from any exhaust
+  place('DOOR-01', 0.6, D - 0.15, 0, 0);                         // egress on the south wall, west end — clear of the fill bay
+
+  /* ---- apply + set room ---- */
+  state.scene.room = { w: W, d: D, h: RM().h };
+  for (const id in P) {
+    const it = get(id); if (!it) continue;
+    it.rot = P[id].rot;
+    const b = bounds(it);
+    it.x = clamp(snap(P[id].x), b.x0, b.x1 - fx(it));
+    it.y = clamp(snap(P[id].y), b.y0, b.y1 - fy(it));
+    it.z = clamp(snap(P[id].z), 0, RM().h - it.h);
+  }
+  // outdoor strip: re-space along the new apron, preserving the user's order
+  const A2 = APRON();
+  let ox = 1.0;
+  for (const id of outdoorOrder) {
+    const it = get(id); if (!it) continue;
+    it.y = clamp(snap(A2.y0 + 0.55), A2.y0, A2.y1 - fy(it));
+    it.x = clamp(snap(ox), 0, RM().w + 0.2 - fx(it));
+    ox += fx(it) + 1.2;
+  }
+  state.selectedId = null;
+  commit();
+  return { bayWasElsewhere };
+}
+/* footprint extent for a hypothetical rotation (used before rot is applied) */
+function fx0(it, rot) { return (rot % 180 === 0) ? it.w : it.d; }
+
+document.getElementById('btn-optimize').addEventListener('click', () => {
+  const before = { w: RM().w, d: RM().d, total: grandTotal() };
+  const info = optimizeLayout();
+  const after = { w: RM().w, d: RM().d, total: grandTotal() };
+  toast(`Optimized — room ${before.w.toFixed(1)}×${before.d.toFixed(1)} → ${after.w.toFixed(1)}×${after.d.toFixed(1)} m · ` +
+        `hose total ${before.total.toFixed(1)} → ${after.total.toFixed(1)} m · ⌘Z to undo` +
+        (info.bayWasElsewhere ? ' · O₂ bay moved NE: leeward of the intake' : ''));
+});
+function grandTotal() {
+  return state.scene.hoses.reduce((sum, h, i) => sum + hoseLen(h, i), 0);
+}
+let toastTimer = 0;
+function toast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c2530;color:#eef2f6;' +
+      'padding:11px 18px;border-radius:9px;font:600 13px/1.4 ui-monospace,Menlo,monospace;box-shadow:0 6px 18px rgba(10,20,35,.35);' +
+      'z-index:60;opacity:0;transition:opacity .15s;max-width:90vw;text-align:center';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 6000);
+}
+
+/* ---------- toolbar: export / import / reset ---------- */
+document.getElementById('btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state.scene, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'station-layout.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+const fileInput = document.getElementById('import-file');
+document.getElementById('btn-import').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    const text = await f.text();
+    const scene = migrate(validateScene(JSON.parse(text)));
+    state.undoSnap = structuredClone(state.scene);
+    state.scene = scene;                             // atomic: only replace after full validation
+    state.selectedId = null;
+    commit();
+  } catch (err) {
+    alert('Import failed — layout unchanged.\n\nReason: ' + err.message);
+  }
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (!confirm('Reset to the reference layout? Your current arrangement will be replaced (⌘Z restores it once).')) return;
+  state.undoSnap = structuredClone(state.scene);
+  state.scene = defaultScene();
+  state.selectedId = null;
+  commit();
+});
+
+/* ---------- tooltips (shared idiom with the P&ID page) ---------- */
+const tipEl = document.createElement('div');
+tipEl.className = 'pid-tip';
+document.body.appendChild(tipEl);
+function showTip(txtVal, x, y) {
+  tipEl.textContent = '';
+  const sep = txtVal.indexOf(' — ');
+  if (sep > 0 && sep < 40) {
+    const tag = document.createElement('span');
+    tag.className = 'tip-tag';
+    tag.textContent = txtVal.slice(0, sep);
+    tipEl.appendChild(tag);
+    tipEl.appendChild(document.createTextNode(txtVal.slice(sep + 3)));
+  } else tipEl.appendChild(document.createTextNode(txtVal));
+  tipEl.style.opacity = '1';
+  const r = tipEl.getBoundingClientRect();
+  let lx = x + 16, ly = y + 18;
+  if (lx + r.width > window.innerWidth - 10) lx = x - r.width - 14;
+  if (ly + r.height > window.innerHeight - 10) ly = y - r.height - 14;
+  tipEl.style.left = Math.max(8, lx) + 'px';
+  tipEl.style.top = Math.max(8, ly) + 'px';
+}
+function hideTip() { tipEl.style.opacity = '0'; }
+
+/* ---------- boot ---------- */
+const stored = loadStored();
+if (stored) state.scene = stored;
+for (const k of ['top', 'front', 'side']) bindView(k);
+renderAll();
+
+/* read-only debug handle for scripted verification */
+window.BSD_LAYOUT = { getScene: () => state.scene, version: 1 };
+})();
+</script>
+</body>
+</html>
