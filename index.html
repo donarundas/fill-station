@@ -47,25 +47,11 @@
   .sheet-wrap {
     max-width: 1780px; margin: 18px auto 0; padding: 0 24px;
   }
-  .sheet-view {
-    position: relative; height: 80vh; min-height: 480px; overflow: hidden;
-    background: var(--card); border: 1px solid var(--rule);
+  .sheet-scroll {
+    overflow-x: auto; background: var(--card); border: 1px solid var(--rule);
     border-radius: 6px; box-shadow: 0 1px 3px rgba(10,20,35,.08);
   }
-  .sheet-view svg {
-    display: block; width: 100%; height: 100%; background: #fff;
-    cursor: grab; touch-action: none;
-  }
-  .sheet-view svg.panning { cursor: grabbing; }
-  .zoom-ctl { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
-  .zoom-ctl button {
-    width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--rule);
-    background: var(--card); color: var(--page-text);
-    font-size: 18px; font-weight: 600; line-height: 1; cursor: pointer;
-    box-shadow: 0 1px 4px rgba(10,20,35,.18);
-  }
-  .zoom-ctl button:hover { border-color: var(--accent); color: var(--accent); }
-  .zoom-ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sheet-scroll svg { display: block; min-width: 1760px; width: 100%; height: auto; background: #fff; }
 
   .rotate-hint { display: none; }
   @media (orientation: portrait) and (hover: none) {
@@ -136,10 +122,10 @@
   @page { size: A4 landscape; margin: 9mm; }
   @media print {
     body { background: #fff; }
-    header.page, .print-btn, .zoom-ctl, .rotate-hint { display: none; }
+    header.page, .print-btn, .rotate-hint { display: none; }
     .sheet-wrap { max-width: none; margin: 0; padding: 0; }
-    .sheet-view { border: none; box-shadow: none; border-radius: 0; overflow: visible; height: auto; min-height: 0; }
-    .sheet-view svg { width: auto; height: 186mm; margin: 0 auto; cursor: default; }
+    .sheet-scroll { border: none; box-shadow: none; border-radius: 0; overflow: visible; }
+    .sheet-scroll svg { min-width: 0; width: auto; height: 186mm; margin: 0 auto; }
     main.doc {
       break-before: page; page-break-before: always;
       max-width: none; padding: 0;
@@ -175,14 +161,7 @@
 <div class="rotate-hint">Best viewed in landscape — rotate your phone ↻</div>
 
 <div class="sheet-wrap">
-  <div class="sheet-view">
-    <svg id="pid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 1240" role="img" aria-label="Process and instrumentation diagram of the gas filling and blending station"></svg>
-    <div class="zoom-ctl" role="group" aria-label="Zoom controls">
-      <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
-      <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
-      <button type="button" id="zoom-fit" aria-label="Fit to view" title="Fit to view">⛶</button>
-    </div>
-  </div>
+  <div class="sheet-scroll"><svg id="pid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 1240" role="img" aria-label="Process and instrumentation diagram of the gas filling and blending station"></svg></div>
 </div>
 
 <main class="doc">
@@ -213,7 +192,7 @@
     </section>
     <section>
       <h3><span class="n">3</span>HP compression &amp; purification</h3>
-      <p>Two Bauer PE-series compressors <span class="tag">C-01/C-02</span> (350 lpm class, N+1) compress to 300 bar
+      <p>Two Bauer PE-VE compressors <span class="tag">C-01/C-02</span> (350 lpm each, N+1) compress to 300 bar
       through discharge check valves. The chiller <span class="tag">E-01</span> cools the final stage so the
       HP separator and the filtration towers work efficiently. <span class="tag">F-02</span> — three
       Bauer P61 towers (molecular sieve / activated carbon / hopcalite) plus a P41 final tower carrying
@@ -589,10 +568,10 @@ pipe([[1115, 160],[1128, 160]], 'amb');
 /* =========================================================
    3 · HP COMPRESSION + PURIFICATION
 ========================================================= */
-compSym(1165, 160, 33, 'C-01 — Bauer PE-series HP compressor, 350 lpm class to 300 bar (N+1 pair). Interstage reliefs in package.');
-compSym(1165, 275, 33, 'C-02 — Bauer PE-series HP compressor, 350 lpm class to 300 bar (N+1 pair). Interstage reliefs in package.');
-label(1165, 100, 'C-01 · BAUER PE SERIES\n350 lpm', { size:9.5, lh:12 });
-label(1165, 324, 'C-02 · BAUER PE SERIES\n350 lpm', { size:9.5, lh:12 });
+compSym(1165, 160, 33, 'C-01 — Bauer PE-VE HP compressor, 350 lpm to 300 bar (N+1 pair). Interstage reliefs in package.');
+compSym(1165, 275, 33, 'C-02 — Bauer PE-VE HP compressor, 350 lpm to 300 bar (N+1 pair). Interstage reliefs in package.');
+label(1165, 100, 'C-01 · BAUER PE-VE\n350 lpm', { size:9.5, lh:12 });
+label(1165, 324, 'C-02 · BAUER PE-VE\n350 lpm', { size:9.5, lh:12 });
 
 pipe([[1198, 160],[1240, 160]], 'hp');
 pipe([[1198, 275],[1240, 275]], 'hp');
@@ -926,7 +905,6 @@ function placeTip(x, y) {
 }
 let tipFor = null;
 svg.addEventListener('pointermove', (e) => {
-  if (pan && pan.moved) return; // dragging — no tooltips
   const g = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
   if (g) {
     if (g !== tipFor) { renderTip(g.getAttribute('data-tip')); tipFor = g; }
@@ -938,91 +916,16 @@ svg.addEventListener('pointermove', (e) => {
 });
 svg.addEventListener('pointerleave', () => { tipEl.style.opacity = '0'; tipFor = null; });
 
-/* =========================================================
-   PAN / ZOOM — starts fit-to-view; + / − / ⛶ buttons,
-   wheel-zoom at the cursor, drag to pan. Print always uses
-   the full sheet regardless of the current zoom state.
-========================================================= */
-const FULL = { x: 0, y: 0, w: 1760, h: 1240 };
-let vb = { ...FULL };
-function applyVB() { svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
-function unitsPerPx() {
-  const r = svg.getBoundingClientRect();
-  return Math.max(vb.w / r.width, vb.h / r.height);
-}
-/* client coords → drawing coords (accounts for the meet letterbox) */
-function toSvgPoint(cx, cy) {
-  const r = svg.getBoundingClientRect();
-  const s = unitsPerPx();
-  const ox = (r.width - vb.w / s) / 2, oy = (r.height - vb.h / s) / 2;
-  return [vb.x + (cx - r.left - ox) * s, vb.y + (cy - r.top - oy) * s];
-}
-function clampVB() {
-  vb.w = Math.min(Math.max(vb.w, 180), FULL.w);
-  vb.h = vb.w * FULL.h / FULL.w;
-  vb.x = Math.min(Math.max(vb.x, FULL.x - vb.w * 0.5), FULL.x + FULL.w - vb.w * 0.5);
-  vb.y = Math.min(Math.max(vb.y, FULL.y - vb.h * 0.5), FULL.y + FULL.h - vb.h * 0.5);
-}
-function zoomAt(factor, cx, cy) {
-  const [sx, sy] = toSvgPoint(cx, cy);
-  const nw = Math.min(Math.max(vb.w * factor, 180), FULL.w);
-  const f = nw / vb.w;
-  vb.x = sx - (sx - vb.x) * f;
-  vb.y = sy - (sy - vb.y) * f;
-  vb.w = nw; vb.h = vb.h * f;
-  clampVB(); applyVB();
-}
-function zoomCenter(factor) {
-  const r = svg.getBoundingClientRect();
-  zoomAt(factor, r.left + r.width / 2, r.top + r.height / 2);
-}
-document.getElementById('zoom-in').addEventListener('click', () => zoomCenter(0.72));
-document.getElementById('zoom-out').addEventListener('click', () => zoomCenter(1 / 0.72));
-document.getElementById('zoom-fit').addEventListener('click', () => { vb = { ...FULL }; applyVB(); });
-svg.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  zoomAt(e.deltaY > 0 ? 1.16 : 1 / 1.16, e.clientX, e.clientY);
-}, { passive: false });
-
-/* drag to pan (suppresses the tooltip while dragging) */
-let pan = null;
+// Touch: tap shows the tip near the element for a few seconds.
 svg.addEventListener('pointerdown', (e) => {
-  if (!e.isPrimary) return;
-  pan = { x: e.clientX, y: e.clientY, vx: vb.x, vy: vb.y, moved: false, tipTarget: e.target };
-  svg.setPointerCapture(e.pointerId);
-  svg.classList.add('panning');
+  if (e.pointerType !== 'touch') return;
+  const g = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+  if (!g) { tipEl.style.opacity = '0'; tipFor = null; return; }
+  renderTip(g.getAttribute('data-tip')); tipFor = g;
+  tipEl.style.opacity = '1';
+  placeTip(e.clientX, e.clientY);
+  window.setTimeout(() => { if (tipFor === g) { tipEl.style.opacity = '0'; tipFor = null; } }, 4000);
 });
-svg.addEventListener('pointermove', (e) => {
-  if (!pan) return;
-  const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
-  if (Math.abs(dx) + Math.abs(dy) > 4) { pan.moved = true; tipEl.style.opacity = '0'; tipFor = null; }
-  if (!pan.moved) return;
-  const s = unitsPerPx();
-  vb.x = pan.vx - dx * s;
-  vb.y = pan.vy - dy * s;
-  clampVB(); applyVB();
-});
-function endPan(e) {
-  if (!pan) return;
-  // A tap (no drag) on a touch device shows the tooltip for a few seconds.
-  if (!pan.moved && e.pointerType === 'touch') {
-    const g = pan.tipTarget instanceof Element ? pan.tipTarget.closest('[data-tip]') : null;
-    if (g) {
-      renderTip(g.getAttribute('data-tip')); tipFor = g;
-      tipEl.style.opacity = '1';
-      placeTip(e.clientX, e.clientY);
-      window.setTimeout(() => { if (tipFor === g) { tipEl.style.opacity = '0'; tipFor = null; } }, 4000);
-    } else { tipEl.style.opacity = '0'; tipFor = null; }
-  }
-  pan = null;
-  svg.classList.remove('panning');
-}
-svg.addEventListener('pointerup', endPan);
-svg.addEventListener('pointercancel', endPan);
-
-/* print always gets the full sheet */
-window.addEventListener('beforeprint', () => svg.setAttribute('viewBox', `${FULL.x} ${FULL.y} ${FULL.w} ${FULL.h}`));
-window.addEventListener('afterprint', applyVB);
 
 })();
 </script>
