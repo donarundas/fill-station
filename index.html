@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlendStation — Station P&amp;ID (BSD-PID-001)</title>
+<style>
+  :root {
+    --page: #eef1f4;
+    --page-text: #253242;
+    --page-muted: #5b6b7d;
+    --card: #ffffff;
+    --rule: #d5dce3;
+    --accent: #1d4ed8;
+    /* Sheet (drawing) palette — the sheet is paper and stays paper in both themes. */
+    --ink: #1c2530;
+    --air-lp: #c2700d;
+    --air-hp: #1d4ed8;
+    --ean: #0f766e;
+    --o2: #15803d;
+    --he: #8a5a2b;
+    --vent: #8b93a1;
+    --zone: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --page:#161b22; --page-text:#dbe3ec; --page-muted:#93a3b5; --card:#1e2530; --rule:#333d4a; --accent:#7ea6ff; }
+  }
+  :root[data-theme="dark"] { --page:#161b22; --page-text:#dbe3ec; --page-muted:#93a3b5; --card:#1e2530; --rule:#333d4a; --accent:#7ea6ff; }
+  :root[data-theme="light"] { --page:#eef1f4; --page-text:#253242; --page-muted:#5b6b7d; --card:#ffffff; --rule:#d5dce3; --accent:#1d4ed8; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--page-text);
+    font: 15px/1.55 "Helvetica Neue", Arial, ui-sans-serif, sans-serif;
+  }
+  header.page {
+    max-width: 1180px; margin: 0 auto; padding: 34px 24px 18px;
+  }
+  header.page .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--page-muted); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  header.page h1 { font-size: 27px; margin: 6px 0 4px; letter-spacing: -.4px; text-wrap: balance; }
+  header.page p { margin: 0; color: var(--page-muted); max-width: 72ch; }
+
+  .sheet-wrap {
+    max-width: 1780px; margin: 18px auto 0; padding: 0 24px;
+  }
+  .sheet-scroll {
+    overflow-x: auto; background: var(--card); border: 1px solid var(--rule);
+    border-radius: 6px; box-shadow: 0 1px 3px rgba(10,20,35,.08);
+  }
+  .sheet-scroll svg { display: block; min-width: 1760px; width: 100%; height: auto; background: #fff; }
+
+  main.doc { max-width: 1180px; margin: 0 auto; padding: 26px 24px 80px; }
+  main.doc h2 {
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--page-muted);
+    border-bottom: 1px solid var(--rule); padding-bottom: 8px; margin: 38px 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .works { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px 28px; }
+  .works section h3 { font-size: 15.5px; margin: 0 0 6px; }
+  .works section h3 .n {
+    display: inline-block; min-width: 22px; color: var(--accent);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+  }
+  .works section p { margin: 0; font-size: 13.8px; color: var(--page-text); }
+  .works .tag { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.3px; white-space: nowrap; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13.2px; }
+  .tbl-wrap { overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 12px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--page-muted); font-weight: 600; }
+  td.mono, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .notes { font-size: 13.3px; color: var(--page-muted); }
+  .notes li { margin-bottom: 6px; }
+
+  .print-btn {
+    float: right; margin: 8px 0 0 20px;
+    border: 1px solid var(--rule); background: var(--card); color: var(--page-text);
+    padding: 9px 16px; border-radius: 8px; font: 600 13px/1 inherit; cursor: pointer;
+  }
+  .print-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .print-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Print: page 1 = the drawing sheet, landscape, full page; page 2 = the details. */
+  @page { size: A4 landscape; margin: 9mm; }
+  @media print {
+    body { background: #fff; }
+    header.page, .print-btn { display: none; }
+    .sheet-wrap { max-width: none; margin: 0; padding: 0; }
+    .sheet-scroll { border: none; box-shadow: none; border-radius: 0; overflow: visible; }
+    .sheet-scroll svg { min-width: 0; width: auto; height: 186mm; margin: 0 auto; }
+    main.doc {
+      break-before: page; page-break-before: always;
+      max-width: none; padding: 0;
+      column-count: 2; column-gap: 26px;
+    }
+    main.doc h2 { margin: 6px 0 6px; break-after: avoid; }
+    .works { display: block; }
+    .works section { break-inside: avoid; margin-bottom: 7px; }
+    .works section h3 { font-size: 12.5px; }
+    .works section p { font-size: 9.8px; line-height: 1.42; }
+    table { font-size: 9.3px; }
+    th, td { padding: 2px 7px 2px 0; }
+    tr { break-inside: avoid; }
+    .tbl-wrap { overflow: visible; }
+    td.mono, .mono { font-size: 9px; }
+    .notes { font-size: 9.5px; line-height: 1.35; }
+    .notes li { margin-bottom: 1px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <button class="print-btn" type="button" onclick="window.print()">⎙ Print / PDF</button>
+  <div class="eyebrow">BSD-PID-001 · REV A · 2026-07-12</div>
+  <h1>Gas Filling &amp; Blending Station — Process &amp; Instrumentation Diagram</h1>
+  <p>Static drawing — hover any major item for its duty.</p>
+</header>
+
+<div class="sheet-wrap">
+  <div class="sheet-scroll"><svg id="pid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 1240" role="img" aria-label="Process and instrumentation diagram of the gas filling and blending station"></svg></div>
+</div>
+
+<main class="doc">
+  <h2>How it works</h2>
+  <div class="works">
+    <section>
+      <h3><span class="n">1</span>Air production (LP)</h3>
+      <p>Ambient air is compressed by the Kaeser oil-injected screw <span class="tag">K-01</span> to 10–13 bar,
+      then cooled and stripped of bulk water (<span class="tag">SEP</span>, auto-drain), dried in the
+      refrigerated dryer <span class="tag">D-01</span> and polished by the coalescing pair
+      <span class="tag">F-01 A/B</span>. The receiver <span class="tag">R-01</span> buffers the two LP
+      consumers: membrane feed and booster drive air. (Drying only works on <em>compressed</em> air —
+      compression concentrates the water vapour so cooling can condense it out; that is why the dryer
+      sits after K-01, never on ambient air.) <span class="tag">PSV-01</span> protects the LP side.</p>
+    </section>
+    <section>
+      <h3><span class="n">2</span>EANx membrane</h3>
+      <p><span class="tag">PCV-01</span> sets a stable feed pressure and <span class="tag">H-01</span> holds
+      the feed at ~45 °C (<span class="tag">TI-01</span>) — membrane cut is temperature-sensitive. The AC
+      guard bed <span class="tag">F-03</span> protects the fibres from oil. Throttling the nitrogen-rich
+      retentate at <span class="tag">NV-01</span> sets the product O₂%; the oxygen-enriched permeate is
+      monitored by <span class="tag">AT-01</span>, which trips the HP compressors at ≥40 % O₂. At the HP
+      suction, <span class="tag">V-01</span> admits membrane product; for plain-air fills
+      <span class="tag">V-02</span> opens the compressors' own ambient intake instead — air never needs
+      the LP train, and its moisture is removed after compression by E-01, the separator and F-02.</p>
+    </section>
+    <section>
+      <h3><span class="n">3</span>HP compression &amp; purification</h3>
+      <p>Two Bauer PE 350 compressors <span class="tag">C-01/C-02</span> (350 lpm each, N+1) compress to 300 bar
+      through discharge check valves. The chiller <span class="tag">E-01</span> cools the final stage so the
+      HP separator and the filtration towers work efficiently. <span class="tag">F-02</span> (molecular
+      sieve / activated carbon / hopcalite) is held above 150 bar by the pressure-maintaining valve
+      <span class="tag">PMV-01</span> and supervised by the Securus moisture sensor
+      <span class="tag">MT-01</span>; <span class="tag">AT-02</span> spot-checks CO against EN 12021.</p>
+    </section>
+    <section>
+      <h3><span class="n">4</span>Storage cascades</h3>
+      <p>Purified product routes to the air cascade <span class="tag">BANK-A</span> or the EAN32 cascade
+      <span class="tag">BANK-N</span> depending on what is being produced — each bank group has its own
+      isolation valve, gauge and relief, with non-return valves preventing back-flow toward the
+      compressors. A direct line (<span class="tag">V-08</span>) feeds the panel for topping while banks
+      recover. Fill from the lowest-pressure bank first; cascade upward.</p>
+    </section>
+    <section>
+      <h3><span class="n">5</span>O₂ / He and the booster</h3>
+      <p>The oxygen cascade (4×50 L) and helium cascade (2×50 L) feed the panel two ways: regulated
+      low-pressure legs (<span class="tag">PCV-03/04</span>) for partial-pressure blending into near-empty
+      cylinders, and the air-driven booster <span class="tag">BST-01</span> (USUN GBD40-OL, drive set by
+      <span class="tag">PCV-02</span>) when
+      the target pressure exceeds bottle pressure. Slow-opening valves, dedicated suction valves per gas and
+      a purge point keep the transfer O₂-safe; everything inside the dashed boundary is cleaned for oxygen
+      service per ASTM G93 / CGA G-4.1.</p>
+    </section>
+    <section>
+      <h3><span class="n">6</span>Filling &amp; blending panel</h3>
+      <p>Every inlet of <span class="tag">FP-01</span> carries isolation, a check valve and an inline
+      filter. O₂ and He are metered through needle valves against the master gauge
+      <span class="tag">PI-10</span>; the analysis port feeds the O₂ analyzer <span class="tag">AT-03</span>
+      so every mix is verified before it leaves. The manifold has its own relief
+      (<span class="tag">PSV-05</span>) and vent; four whips with individual isolation and bleed valves
+      serve the diving cylinders.</p>
+    </section>
+  </div>
+
+  <h2>Instrument &amp; set-point schedule</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Tag</th><th>Item</th><th>Service</th><th>Set point / range</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">PSV-01</td><td>Relief valve</td><td>LP receiver R-01</td><td class="mono">16 bar g</td></tr>
+      <tr><td class="mono">PSV-02</td><td>Relief valve</td><td>HP filtration inlet</td><td class="mono">330 bar</td></tr>
+      <tr><td class="mono">PSV-03 A/B</td><td>Relief valves</td><td>Air / EAN32 bank manifolds</td><td class="mono">330 bar</td></tr>
+      <tr><td class="mono">PSV-04</td><td>Relief valve</td><td>Booster discharge</td><td class="mono">330 bar</td></tr>
+      <tr><td class="mono">PSV-05</td><td>Relief valve</td><td>Fill panel manifold</td><td class="mono">330 bar</td></tr>
+      <tr><td class="mono">PCV-01</td><td>Pressure regulator</td><td>Membrane feed</td><td class="mono">10.5 bar</td></tr>
+      <tr><td class="mono">PCV-02</td><td>Pressure regulator</td><td>Booster drive air</td><td class="mono">6–8 bar</td></tr>
+      <tr><td class="mono">PCV-03 / 04</td><td>Pressure regulators</td><td>O₂ / He blending legs</td><td class="mono">0–200 bar in · 0–240 bar out</td></tr>
+      <tr><td class="mono">PMV-01</td><td>Pressure-maintaining valve</td><td>F-02 filtration back-pressure</td><td class="mono">≥150 bar</td></tr>
+      <tr><td class="mono">AT-01</td><td>O₂ analyzer</td><td>Membrane permeate</td><td class="mono">21–40 % · trip ≥40 %</td></tr>
+      <tr><td class="mono">AT-02</td><td>CO analyzer</td><td>Post-filtration air quality</td><td class="mono">alarm 5 ppm (EN 12021)</td></tr>
+      <tr><td class="mono">AT-03</td><td>O₂ analyzer</td><td>Panel analysis port</td><td class="mono">0–100 %</td></tr>
+      <tr><td class="mono">MT-01</td><td>Moisture sensor (Securus)</td><td>F-02 cartridge saturation</td><td class="mono">alarm → compressor trip</td></tr>
+      <tr><td class="mono">TI-01</td><td>Temperature indicator</td><td>Membrane feed</td><td class="mono">45 °C nominal</td></tr>
+      <tr><td class="mono">FI-01</td><td>Flow indicator</td><td>Membrane permeate</td><td class="mono">rotameter</td></tr>
+      <tr><td class="mono">PI-01…10</td><td>Pressure gauges</td><td>LP 0–16 bar · HP 0–400 bar</td><td class="mono">glycerine-filled, cl. 1.0</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>General notes</h2>
+  <ol class="notes">
+    <li>All components inside the dashed boundary are cleaned for oxygen service per ASTM G93 / CGA G-4.1 — hydrocarbon-free, O₂-compatible seats and lubricants, slow-opening valves on all high-pressure O₂ isolation points.</li>
+    <li>System design pressure 300 bar; all HP relief valves set at 330 bar (10 % accumulation). LP side design 13 bar, relief 16 bar.</li>
+    <li>EAN32 storage and every line carrying &gt;23.5 % O₂ is treated as oxygen service.</li>
+    <li>All PSV discharges, the N₂-rich retentate, booster drive exhaust, purge and panel vents route outdoors above roof level, away from the compressor intake.</li>
+    <li>Condensate auto-drains (AD) collect to an oil–water separator before disposal.</li>
+    <li>Interlocks: AT-01 ≥40 % O₂ trips HP compressors · MT-01 saturation trips compressors · PMV-01 guarantees filtration efficiency.</li>
+    <li>Informational — not licence-grade. Sizing estimates only, not a regulatory or licensing determination.</li>
+  </ol>
+</main>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('pid');
+
+const INK = '#1c2530';
+const CLS = {
+  lp:  { stroke:'#c2700d' }, hp:  { stroke:'#1d4ed8' }, ean: { stroke:'#0f766e' },
+  o2:  { stroke:'#15803d' }, he:  { stroke:'#8a5a2b' }, drv: { stroke:'#c2700d', dash:'7 5' },
+  vnt: { stroke:'#8b93a1', dash:'5 5' }, sig: { stroke:'#7c8794', dash:'2 4' },
+  amb: { stroke:'#1c2530' },
+};
+
+function el(name, attrs = {}, parent = svg) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  parent.appendChild(n);
+  return n;
+}
+function grp(title) {
+  const g = el('g');
+  if (title) { const t = document.createElementNS(NS, 'title'); t.textContent = title; g.appendChild(t); }
+  return g;
+}
+function pts2d(pts) { return 'M' + pts.map(p => p.join(',')).join(' L'); }
+function pipe(pts, kind, w = 2.4, parent = svg) {
+  const c = CLS[kind] || { stroke: INK };
+  const a = { d: pts2d(pts), fill:'none', stroke:c.stroke, 'stroke-width':w, 'stroke-linejoin':'round' };
+  if (c.dash) a['stroke-dasharray'] = c.dash;
+  return el('path', a, parent);
+}
+function arrow(x, y, dir, color) { // dir: 'r','l','u','d'
+  const s = 7;
+  const d = { r:[[x-s,y-s],[x+s,y],[x-s,y+s]], l:[[x+s,y-s],[x-s,y],[x+s,y+s]],
+              u:[[x-s,y+s],[x,y-s],[x+s,y+s]], d:[[x-s,y-s],[x,y+s],[x+s,y-s]] }[dir];
+  el('path', { d: pts2d(d)+'Z', fill: color, stroke:'none' });
+}
+function label(x, y, str, o = {}) {
+  const t = el('text', {
+    x, y, fill: o.color || INK, 'font-size': o.size || 11.5,
+    'text-anchor': o.anchor || 'middle',
+    'font-family': o.mono ? 'ui-monospace,Menlo,monospace' : 'Helvetica Neue,Arial,sans-serif',
+    'font-weight': o.weight || (o.mono ? 500 : 600),
+    'letter-spacing': o.ls || (o.mono ? '0' : '.04em'),
+  }, o.parent || svg);
+  const lines = String(str).split('\n');
+  if (lines.length === 1) { t.textContent = str; return t; }
+  lines.forEach((ln, i) => {
+    const ts = document.createElementNS(NS, 'tspan');
+    ts.setAttribute('x', x); ts.setAttribute('dy', i === 0 ? 0 : (o.lh || 13));
+    ts.textContent = ln; t.appendChild(ts);
+  });
+  return t;
+}
+
+/* ---------- symbols ---------- */
+function valve(x, y, orient, kind, tag, name, opts = {}) {
+  const g = grp(name || tag); const c = (CLS[kind]||{stroke:INK}).stroke; const s = 9;
+  const shape = orient === 'h'
+    ? `M${x-s},${y-s} L${x},${y} L${x-s},${y+s} Z M${x+s},${y-s} L${x},${y} L${x+s},${y+s} Z`
+    : `M${x-s},${y-s} L${x},${y} L${x+s},${y-s} Z M${x-s},${y+s} L${x},${y} L${x+s},${y+s} Z`;
+  el('path', { d: shape, fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+  if (opts.needle) { // stem + N
+    const st = orient === 'h' ? [[x, y],[x, y-16],[x-5, y-16],[x+5, y-16]] : [[x, y],[x-16, y],[x-16, y-5],[x-16, y+5]];
+    el('path', { d:`M${st[0]} L${st[1]}`, stroke:c, 'stroke-width':2 }, g);
+    el('path', { d:`M${st[2]} L${st[3]}`, stroke:c, 'stroke-width':2 }, g);
+  }
+  // Tags: below for horizontal valves, beside (right) for vertical ones.
+  if (tag) {
+    if (orient === 'v') label(x + 15, y + (opts.tagDy ?? 4), tag, { size:9.5, mono:true, anchor:'start', parent:g });
+    else label(x, y + (opts.tagDy ?? 24), tag, { size:9.5, mono:true, parent:g });
+  }
+  if (opts.sub) {
+    if (orient === 'v') label(x + 15, y + (opts.tagDy ?? 4) + 11, opts.sub, { size:8.5, color:'#5b6b7d', anchor:'start', parent:g });
+    else label(x, y + (opts.tagDy ?? 24) + 11, opts.sub, { size:8.5, color:'#5b6b7d', parent:g });
+  }
+  return g;
+}
+function checkV(x, y, orient, kind, dir = 1, tag) {
+  const g = grp('Check valve (non-return)'); const c = (CLS[kind]||{stroke:INK}).stroke; const s = 8;
+  if (orient === 'h') {
+    const x0 = x - dir*s, x1 = x + dir*s;
+    el('path', { d:`M${x0},${y-s} L${x1},${y} L${x0},${y+s} Z`, fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+    el('path', { d:`M${x1},${y-s-1} L${x1},${y+s+1}`, stroke:c, 'stroke-width':2.6 }, g);
+  } else {
+    const y0 = y - dir*s, y1 = y + dir*s;
+    el('path', { d:`M${x-s},${y0} L${x},${y1} L${x+s},${y0} Z`, fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+    el('path', { d:`M${x-s-1},${y1} L${x+s+1},${y1}`, stroke:c, 'stroke-width':2.6 }, g);
+  }
+  if (tag) label(x, y + 22, tag, { size:9.5, mono:true, parent:g });
+  return g;
+}
+function psv(x, y, kind, tag, set, side = 'r') { // sits ON a line point (x,y), discharges up
+  const g = grp(`${tag} relief valve — set ${set}`); const c = (CLS[kind]||{stroke:INK}).stroke;
+  el('path', { d:`M${x},${y} L${x},${y-12}`, stroke:c, 'stroke-width':2 }, g);
+  el('path', { d:`M${x-8},${y-12} L${x+8},${y-12} L${x},${y-26} Z`, fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+  // spring
+  el('path', { d:`M${x},${y-26} l4,-4 l-8,-4 l8,-4 l-8,-4 l4,-4`, fill:'none', stroke:c, 'stroke-width':1.8 }, g);
+  el('path', { d:`M${x},${y-46} L${x},${y-54}`, stroke:CLS.vnt.stroke, 'stroke-width':1.8, 'stroke-dasharray':'4 4' }, g);
+  arrow(x, y-60, 'u', CLS.vnt.stroke);
+  const lx = side === 'l' ? x - 14 : x + 14, an = side === 'l' ? 'end' : 'start';
+  label(lx, y - 30, tag, { size:9.5, mono:true, anchor:an, parent:g });
+  label(lx, y - 19, set, { size:8.5, mono:true, anchor:an, color:'#5b6b7d', parent:g });
+  return g;
+}
+function reg(x, y, kind, tag, set, name) { // regulator on horizontal line
+  const g = grp(name || `${tag} pressure regulator`); const c = (CLS[kind]||{stroke:INK}).stroke; const s = 8;
+  el('path', { d:`M${x-s},${y-s} L${x},${y} L${x-s},${y+s} Z M${x+s},${y-s} L${x},${y} L${x+s},${y+s} Z`,
+       fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+  el('path', { d:`M${x},${y} L${x},${y-14}`, stroke:c, 'stroke-width':2 }, g);
+  el('path', { d:`M${x-9},${y-14} A9,7 0 0 1 ${x+9},${y-14} Z`, fill:'#fff', stroke:c, 'stroke-width':2 }, g);
+  if (tag) label(x, y + 24, tag, { size:9.5, mono:true, parent:g });
+  if (set) label(x, y + 35, set, { size:8.5, mono:true, color:'#5b6b7d', parent:g });
+  return g;
+}
+function inst(cx, cy, line1, line2, leadTo, note) { // instrument bubble + dashed leader
+  const g = grp(note || `${line1}-${line2}`);
+  if (leadTo) el('path', { d:`M${cx},${cy} L${leadTo[0]},${leadTo[1]}`, stroke:CLS.sig.stroke,
+    'stroke-width':1.4, 'stroke-dasharray':'2 4' }, g);
+  el('circle', { cx, cy, r:15, fill:'#fff', stroke:INK, 'stroke-width':1.8 }, g);
+  label(cx, cy - 2, line1, { size:9.5, mono:true, parent:g });
+  label(cx, cy + 9, line2, { size:9.5, mono:true, parent:g });
+  if (note) label(cx, cy - 22, note, { size:8.5, color:'#5b6b7d', parent:g });
+  return g;
+}
+function drainAD(x, y) { // auto condensate drain, hangs from (x,y)
+  const g = grp('Automatic condensate drain');
+  el('path', { d:`M${x},${y} L${x},${y+12}`, stroke:CLS.vnt.stroke, 'stroke-width':1.8, 'stroke-dasharray':'4 4' }, g);
+  el('path', { d:`M${x-6},${y+12} L${x+6},${y+12} L${x},${y+22} Z`, fill:'#fff', stroke:CLS.vnt.stroke, 'stroke-width':1.6 }, g);
+  label(x, y + 34, 'AD', { size:8.5, mono:true, color:'#8b93a1', parent:g });
+  return g;
+}
+function filt(x, y, w, h, name) { // filter column with hatch
+  const g = grp(name || 'Filter');
+  el('rect', { x, y, width:w, height:h, rx:w/3, fill:'#fff', stroke:INK, 'stroke-width':2 }, g);
+  for (let i = 1; i <= 3; i++) {
+    const yy = y + (h/4)*i;
+    el('path', { d:`M${x+3},${yy+5} L${x+w-3},${yy-5}`, stroke:INK, 'stroke-width':1.2 }, g);
+  }
+  return g;
+}
+function equipBox(x, y, w, h, name) {
+  const g = grp(name);
+  el('rect', { x, y, width:w, height:h, fill:'#fff', stroke:INK, 'stroke-width':2.2 }, g);
+  return g;
+}
+function vessel(x, y, w, h, name) {
+  const g = grp(name || 'Vessel');
+  el('rect', { x, y, width:w, height:h, rx:w/2.2, fill:'#fff', stroke:INK, 'stroke-width':2.2 }, g);
+  return g;
+}
+function compSym(cx, cy, r, name) {
+  const g = grp(name);
+  el('circle', { cx, cy, r, fill:'#fff', stroke:INK, 'stroke-width':2.4 }, g);
+  el('path', { d:`M${cx-r+6},${cy+r-12} L${cx+r-6},${cy-r+12}`, stroke:INK, 'stroke-width':1.6 }, g);
+  el('path', { d:`M${cx-r/2.4},${cy-4} L${cx+r/2.4},${cy-4} M${cx-r/2.4},${cy+4} L${cx+r/2.4},${cy+4}`,
+    stroke:INK, 'stroke-width':1.6 }, g);
+  return g;
+}
+function cyl(x, y, w, h, color, parent) {
+  const g = parent || svg;
+  el('rect', { x, y: y+8, width:w, height:h-8, rx:6, fill:'#fff', stroke:color, 'stroke-width':2.2 }, g);
+  el('rect', { x: x+w/2-3, y, width:6, height:9, fill:color, stroke:'none' }, g);
+  return g;
+}
+
+/* =========================================================
+   SHEET FRAME
+========================================================= */
+el('rect', { x:14, y:14, width:1732, height:1212, fill:'none', stroke:INK, 'stroke-width':2.4 });
+el('rect', { x:22, y:22, width:1716, height:1196, fill:'none', stroke:INK, 'stroke-width':0.8 });
+
+/* =========================================================
+   1 · LP PRODUCTION TRAIN  (y = 170)
+========================================================= */
+const Y1 = 170;
+arrow(96, Y1, 'r', CLS.lp.stroke);
+pipe([[60, Y1],[120, Y1]], 'lp');
+label(88, Y1 + 26, 'AIR INTAKE', { size:10 });
+
+const k01 = equipBox(120, 135, 110, 70, 'K-01 — Kaeser oil-injected rotary screw compressor, 22 kW, 10–13 bar. Feeds the membrane and booster drive only.');
+label(175, 162, 'K-01', { mono:true, size:11, parent:k01 });
+label(175, 178, 'KAESER SCREW', { size:9, parent:k01 });
+label(175, 191, '22 kW · 13 bar', { size:8.5, color:'#5b6b7d', parent:k01 });
+
+pipe([[230, Y1],[255, Y1]], 'lp');
+const sep1 = vessel(255, 145, 30, 50, 'Moisture separator — knocks out bulk condensate after the screw aftercooler.');
+label(270, 132, 'SEP', { size:9, mono:true });
+drainAD(270, 195);
+
+pipe([[285, Y1],[308, Y1]], 'lp');
+const d01 = equipBox(308, 140, 68, 60, 'D-01 — refrigerated dryer. Drops the LP dew point so filters and membrane see dry air.');
+label(342, 165, 'D-01', { mono:true, size:10.5, parent:d01 });
+label(342, 180, 'REFRIG', { size:9, parent:d01 });
+label(342, 191, 'DRYER', { size:9, parent:d01 });
+drainAD(342, 200);
+
+pipe([[376, Y1],[398, Y1]], 'lp');
+filt(398, 142, 26, 56, 'F-01A — coalescing pre-filter');
+filt(432, 142, 26, 56, 'F-01B — fine coalescing filter, 0.01 µm');
+pipe([[424, Y1],[432, Y1]], 'lp');
+label(428, 132, 'F-01 A/B', { size:9, mono:true });
+drainAD(411, 198); drainAD(445, 198);
+
+pipe([[458, Y1],[490, Y1]], 'lp');
+const r01 = vessel(490, 115, 50, 110, 'R-01 — LP air receiver. Buffers membrane feed, HP suction and booster drive demand.');
+label(445, 258, 'R-01 · LP RECEIVER', { size:9.5 });
+psv(515, 115, 'lp', 'PSV-01', '16 bar');
+inst(455, 100, 'PI', '01', [497, 122]);
+drainAD(515, 225);
+
+/* LP header out of receiver */
+pipe([[540, Y1],[585, Y1]], 'lp');
+
+/* --- booster drive tap (x=560 → down → booster) --- */
+pipe([[560, Y1],[560, 620],[450, 620],[450, 632]], 'drv', 2);
+valve(560, 320, 'v', 'lp', 'V-03', 'Booster drive isolation', { sub:'DRIVE AIR' });
+reg(560, 430, 'lp', 'PCV-02', '7 bar', 'PCV-02 — booster drive air regulator');
+inst(602, 470, 'PI', '02', [566, 442]);
+
+/* =========================================================
+   2 · MEMBRANE BRANCH  (continues y=170)  +  AIR DIRECT (y=250)
+========================================================= */
+reg(620, Y1, 'lp', 'PCV-01', '10.5 bar', 'PCV-01 — membrane feed pressure regulator');
+pipe([[585, Y1],[612, Y1]], 'lp');
+pipe([[628, Y1],[652, Y1]], 'lp');
+
+const h01 = equipBox(652, 145, 52, 50, 'H-01 — membrane feed heater; holds ~45 °C for a stable O₂ cut.');
+el('path', { d:'M660,170 l7,-10 l7,20 l7,-20 l7,20 l7,-10', fill:'none', stroke:INK, 'stroke-width':1.6 }, h01);
+label(678, 210, 'H-01 HEATER', { size:8.5 });
+inst(678, 108, 'TI', '01', [678, 145]);
+
+pipe([[704, Y1],[722, Y1]], 'lp');
+filt(722, 145, 26, 50, 'F-03 — activated-carbon guard bed; protects membrane fibres from oil vapour.');
+label(735, 210, 'F-03 AC', { size:8.5 });
+
+pipe([[748, Y1],[775, Y1]], 'lp');
+const mem = equipBox(775, 140, 150, 60, 'MEM-01 — nitrox membrane. O₂ permeates faster: permeate = EANx product to HP suction; N₂-rich retentate vents. Throttle NV-01 to set O₂%.');
+label(850, 128, 'MEM-01 · EANx MEMBRANE  ≤40% O₂', { size:9.5 });
+for (let i = 1; i <= 3; i++)
+  el('path', { d:`M783,${140+15*i} L917,${140+15*i}`, stroke:INK, 'stroke-width':1, 'stroke-dasharray':'6 4' }, mem);
+
+/* retentate vent */
+pipe([[905, 140],[905, 118]], 'vnt', 1.8);
+valve(905, 104, 'v', 'vnt', 'NV-01', 'NV-01 — retentate throttle: sets product O₂%', { needle:true, tagDy:-40 });
+pipe([[905, 90],[905, 66]], 'vnt', 1.8);
+arrow(905, 60, 'u', CLS.vnt.stroke);
+label(905, 46, 'N₂-RICH RETENTATE VENT', { size:8.5, color:'#5b6b7d' });
+
+/* permeate → EANx product line */
+pipe([[925, 185],[1085, 185]], 'ean');
+/* FI rotameter */
+const fi = grp('FI-01 — permeate flow rotameter');
+el('path', { d:'M962,197 L974,197 L971,173 L965,173 Z', fill:'#fff', stroke:INK, 'stroke-width':1.8 }, fi);
+label(968, 212, 'FI-01', { size:8.5, mono:true });
+inst(1005, 115, 'AT', '01', [1005, 185], 'TRIP ≥40% O₂');
+valve(1042, 185, 'h', 'ean', 'V-01', 'V-01 — EANx mode suction valve', { sub:'EANx MODE' });
+
+/* plain-air mode: the HP compressors draw AMBIENT air through their own intake
+   filter — the LP train (screw/dryer/receiver) serves only the membrane and the
+   booster drive. Air-path moisture is removed AFTER compression (E-01 → SEP → F-02). */
+arrow(936, 250, 'r', CLS.amb.stroke);
+pipe([[906, 250],[958, 250]], 'amb');
+filt(958, 228, 24, 44, 'HP ambient intake filter');
+pipe([[982, 250],[1085, 250]], 'amb');
+valve(1032, 250, 'h', 'amb', 'V-02', 'V-02 — plain-air mode: ambient suction changeover', { sub:'AIR MODE' });
+label(918, 284, 'AMBIENT\nINTAKE', { size:8.5 });
+
+/* merge to HP suction */
+pipe([[1085, 185],[1085, 218]], 'ean');
+pipe([[1085, 250],[1085, 218]], 'amb');
+pipe([[1085, 218],[1115, 218]], 'amb');
+pipe([[1115, 160],[1115, 275],[1128, 275]], 'amb');
+pipe([[1115, 160],[1128, 160]], 'amb');
+
+/* =========================================================
+   3 · HP COMPRESSION + PURIFICATION
+========================================================= */
+compSym(1165, 160, 33, 'C-01 — Bauer PE 350 HP compressor, 350 lpm to 300 bar (N+1 pair). Interstage reliefs in package.');
+compSym(1165, 275, 33, 'C-02 — Bauer PE 350 HP compressor, 350 lpm to 300 bar (N+1 pair). Interstage reliefs in package.');
+label(1165, 100, 'C-01 · BAUER PE 350\n350 lpm', { size:9.5, lh:12 });
+label(1165, 324, 'C-02 · BAUER PE 350\n350 lpm', { size:9.5, lh:12 });
+
+pipe([[1198, 160],[1240, 160]], 'hp');
+pipe([[1198, 275],[1240, 275]], 'hp');
+checkV(1222, 160, 'h', 'hp', 1);
+checkV(1222, 275, 'h', 'hp', 1);
+pipe([[1240, 160],[1240, 275]], 'hp');
+pipe([[1240, 218],[1290, 218]], 'hp');
+inst(1272, 130, 'PI', '03', [1258, 210]);
+
+const e01 = equipBox(1290, 190, 62, 56, 'E-01 — chiller / final-stage cooler. Cool gas = efficient moisture knock-out before filtration.');
+el('path', { d:'M1296,218 l8,-11 l8,22 l8,-22 l8,22 l8,-22 l8,11', fill:'none', stroke:INK, 'stroke-width':1.6 }, e01);
+label(1321, 262, 'E-01 CHILLER', { size:8.5 });
+
+pipe([[1352, 218],[1372, 218]], 'hp');
+vessel(1372, 194, 26, 48, 'HP separator — condensate knock-out after the chiller.');
+drainAD(1385, 242);
+pipe([[1398, 218],[1420, 218]], 'hp');
+
+/* F-02 filtration frame */
+const f02 = grp('F-02 — HP filtration (Bauer P61 class): molecular sieve, activated carbon, hopcalite. Securus-monitored.');
+el('rect', { x:1420, y:140, width:158, height:150, fill:'none', stroke:INK, 'stroke-width':1.4,
+  'stroke-dasharray':'8 5' }, f02);
+filt(1434, 158, 30, 112, 'Molecular sieve tower (water)');
+filt(1478, 158, 30, 112, 'Activated carbon tower (oil, odour)');
+filt(1522, 158, 30, 112, 'Hopcalite tower (CO → CO₂)');
+label(1449, 284, 'MS', { size:8.5, mono:true }); label(1493, 284, 'AC', { size:8.5, mono:true });
+label(1537, 284, 'HC', { size:8.5, mono:true });
+label(1499, 130, 'F-02 · HP FILTRATION + SECURUS', { size:9.5 });
+psv(1410, 218, 'hp', 'PSV-02', '330 bar', 'l');
+inst(1499, 88, 'MT', '01', [1493, 158], 'SECURUS · MOISTURE TRIP');
+pipe([[1420, 218],[1434, 218]], 'hp');
+pipe([[1464, 218],[1478, 218]], 'hp'); pipe([[1508, 218],[1522, 218]], 'hp');
+pipe([[1552, 218],[1600, 218]], 'hp');
+
+reg(1612, 218, 'hp', 'PMV-01', '≥150 bar', 'PMV-01 — pressure-maintaining valve: keeps towers at working pressure for drying efficiency');
+pipe([[1620, 218],[1648, 218]], 'hp');
+checkV(1640, 218, 'h', 'hp', 1);
+pipe([[1648, 218],[1668, 218],[1668, 420]], 'hp');
+inst(1706, 262, 'PI', '04', [1668, 262]);
+inst(1630, 330, 'AT', '02', [1668, 330], 'CO · 5 ppm');
+
+/* =========================================================
+   4 · DISTRIBUTION HEADER + BANKS
+========================================================= */
+pipe([[1668, 420],[880, 420]], 'hp', 3);
+label(1270, 404, 'HP DISTRIBUTION HEADER · 300 bar', { size:10, color:CLS.hp.stroke });
+
+/* EAN32 bank tap */
+pipe([[1580, 420],[1580, 540]], 'ean');
+valve(1580, 452, 'v', 'ean', 'V-10', 'V-10 — route product to EAN32 cascade', { sub:'TO EAN32' });
+checkV(1580, 498, 'v', 'ean', 1);
+pipe([[1470, 540],[1690, 540]], 'ean');
+psv(1478, 540, 'ean', 'PSV-03B', '330 bar');
+inst(1712, 505, 'PI', '07', [1685, 537]);
+[1500, 1548, 1610, 1658].forEach((x) => {
+  pipe([[x, 540],[x, 560]], 'ean', 1.8);
+  cyl(x - 14, 560, 28, 96, CLS.ean.stroke);
+  pipe([[x, 656],[x, 668]], 'ean', 1.8);
+});
+pipe([[1500, 668],[1658, 668]], 'ean', 1.8);
+el('rect', { x:1470, y:552, width:220, height:126, fill:'none', stroke:CLS.ean.stroke,
+  'stroke-width':1, 'stroke-dasharray':'4 4' });
+label(1580, 698, 'BANK-N · EAN32 CASCADE · 4×50 L · 300 bar', { size:9.5 });
+/* EAN return to panel */
+pipe([[1658, 668],[1658, 880],[1105, 880]], 'ean');
+valve(1500, 880, 'h', 'ean', 'V-16', 'EAN32 supply to panel');
+checkV(1140, 880, 'h', 'ean', -1);
+
+/* AIR bank tap */
+pipe([[1200, 420],[1200, 540]], 'hp');
+valve(1200, 452, 'v', 'hp', 'V-09', 'V-09 — route product to air cascade', { sub:'TO AIR BANKS' });
+checkV(1200, 498, 'v', 'hp', 1);
+pipe([[1080, 540],[1330, 540]], 'hp');
+psv(1088, 540, 'hp', 'PSV-03A', '330 bar');
+inst(1352, 505, 'PI', '06', [1325, 537]);
+[1110, 1158, 1218, 1266].forEach((x) => {
+  pipe([[x, 540],[x, 560]], 'hp', 1.8);
+  cyl(x - 14, 560, 28, 96, CLS.hp.stroke);
+  pipe([[x, 656],[x, 668]], 'hp', 1.8);
+});
+pipe([[1110, 668],[1266, 668]], 'hp', 1.8);
+el('rect', { x:1080, y:552, width:206, height:126, fill:'none', stroke:CLS.hp.stroke,
+  'stroke-width':1, 'stroke-dasharray':'4 4' });
+label(1183, 698, 'BANK-A · AIR CASCADE · 4×50 L · 300 bar', { size:9.5 });
+/* AIR bank return to panel */
+pipe([[1110, 668],[1110, 712],[1030, 712],[1030, 830],[1105, 830]], 'hp');
+valve(1052, 830, 'h', 'hp', 'V-15', 'Air cascade supply to panel', { tagDy:-20 });
+checkV(1086, 830, 'h', 'hp', 1);
+
+/* Direct fill drop */
+pipe([[880, 420],[880, 760]], 'hp');
+valve(880, 470, 'v', 'hp', 'V-08', 'V-08 — direct compressor-to-panel fill line', { sub:'DIRECT FILL' });
+inst(920, 600, 'PI', '05', [880, 600]);
+
+/* =========================================================
+   5 · O₂-CLEAN ZONE : O₂ / He STORAGE + BOOSTER
+========================================================= */
+el('rect', { x:52, y:498, width:706, height:462, fill:'none', stroke:CLS.zone || '#b91c1c',
+  'stroke-width':1.6, 'stroke-dasharray':'12 7', rx:8 });
+el('rect', { x:52, y:498, width:706, height:462, fill:'#b91c1c', opacity:0.025, rx:8 });
+label(66, 518, 'O₂-CLEAN ZONE — ASTM G93 / CGA G-4.1', { size:10, anchor:'start', color:'#b91c1c' });
+
+/* Oxygen cascade */
+const o2g = grp('O2-01 — oxygen cascade, 4×50 L @ 200 bar, O₂-clean manifold with slow-opening isolation. Decant from lowest cylinder first.');
+[92, 134, 176, 218].forEach((x) => cyl(x, 545, 30, 120, CLS.o2.stroke, o2g));
+el('rect', { x:84, y:536, width:172, height:136, fill:'none', stroke:CLS.o2.stroke, 'stroke-width':1, 'stroke-dasharray':'4 4' }, o2g);
+label(170, 692, 'O2-01 · OXYGEN CASCADE · 4×50 L · 200 bar', { size:9.5 });
+pipe([[256, 604],[290, 604]], 'o2');
+inst(276, 558, 'PI', '08', [276, 600]);
+valve(304, 604, 'h', 'o2', 'V-11', 'V-11 — slow-opening O₂ isolation', { sub:'SLOW-OPEN' });
+/* split: up to booster, down to regulator leg */
+pipe([[290, 604],[340, 604]], 'o2');
+pipe([[340, 604],[340, 710],[380, 710]], 'o2');           /* to booster gas section */
+valve(362, 710, 'h', 'o2', 'V-13', 'Booster suction — oxygen', { tagDy:-16 });
+pipe([[340, 604],[340, 862],[790, 862]], 'o2');           /* regulated PP leg */
+reg(500, 862, 'o2', 'PCV-03', '0–240 bar', 'PCV-03 — O₂ blending regulator (partial-pressure leg)');
+checkV(738, 862, 'h', 'o2', 1);
+
+/* Helium bank */
+const heg = grp('HE-01 — helium cascade, 2×50 L @ 200 bar. Decant from lowest cylinder first.');
+cyl(96, 745, 34, 120, CLS.he.stroke, heg);
+cyl(146, 745, 34, 120, CLS.he.stroke, heg);
+el('rect', { x:84, y:736, width:110, height:136, fill:'none', stroke:CLS.he.stroke, 'stroke-width':1, 'stroke-dasharray':'4 4' }, heg);
+label(150, 892, 'HE-01 · HELIUM CASCADE · 2×50 L · 200 bar', { size:9.5 });
+pipe([[194, 800],[300, 800]], 'he');
+inst(232, 758, 'PI', '09', [232, 797]);
+valve(268, 800, 'h', 'he', 'V-12', 'V-12 — helium isolation');
+pipe([[300, 800],[318, 800],[318, 744],[380, 744]], 'he'); /* to booster gas section */
+valve(362, 744, 'h', 'he', 'V-14', 'Booster suction — helium', { tagDy:22 });
+pipe([[300, 800],[300, 916],[790, 916]], 'he');            /* regulated PP leg */
+reg(500, 916, 'he', 'PCV-04', '0–240 bar', 'PCV-04 — He blending regulator (partial-pressure leg)');
+checkV(738, 916, 'h', 'he', 1);
+
+/* Booster */
+const bst = grp('BST-01 — USUN GBD40-OL oil-free air-driven gas booster. Drive air from R-01; boosts O₂ or He above bottle pressure into the panel. Purge between gas changes.');
+el('rect', { x:380, y:632, width:140, height:138, fill:'#fff', stroke:INK, 'stroke-width':2.4 }, bst);
+el('rect', { x:394, y:646, width:112, height:38, fill:'none', stroke:INK, 'stroke-width':1.3 }, bst);
+el('rect', { x:394, y:698, width:112, height:56, fill:'none', stroke:INK, 'stroke-width':1.3 }, bst);
+label(450, 668, 'AIR DRIVE', { size:8.5, parent:bst });
+label(450, 728, 'GAS SECTION', { size:8.5, parent:bst });
+label(450, 740, '(O₂-CLEAN)', { size:7.5, color:'#5b6b7d', parent:bst });
+label(450, 764, 'BST-01 · USUN GBD40-OL', { size:8, parent:bst });
+/* drive exhaust muffler */
+const muf = grp('Drive-air exhaust muffler — vents outdoors');
+el('rect', { x:492, y:606, width:24, height:14, rx:4, fill:'#fff', stroke:CLS.vnt.stroke, 'stroke-width':1.6 }, muf);
+el('path', { d:'M497,608 L497,618 M504,608 L504,618 M511,608 L511,618', stroke:CLS.vnt.stroke, 'stroke-width':1 }, muf);
+pipe([[504, 632],[504, 620]], 'vnt', 1.6);
+pipe([[504, 606],[504, 592]], 'vnt', 1.6);
+arrow(504, 586, 'u', CLS.vnt.stroke);
+label(548, 596, 'DRIVE EXHAUST', { size:8, color:'#5b6b7d' });
+/* purge — vent the gas section between O₂ and He duty */
+pipe([[500, 770],[500, 788]], 'vnt', 1.6);
+valve(500, 800, 'v', 'vnt', 'PV', 'Purge valve — vent gas section between O₂ and He duty', { tagDy:4 });
+pipe([[500, 812],[500, 826]], 'vnt', 1.6);
+arrow(500, 832, 'd', CLS.vnt.stroke);
+label(500, 850, 'PURGE', { size:8, color:'#5b6b7d' });
+/* booster outlet */
+pipe([[520, 726],[740, 726],[740, 800],[790, 800]], 'o2');
+checkV(556, 726, 'h', 'o2', 1);
+psv(600, 726, 'o2', 'PSV-04', '330 bar');
+inst(660, 674, 'PI', '10', [652, 722]);
+
+/* =========================================================
+   6 · FILLING PANEL + TANKS
+========================================================= */
+const fp = grp('FP-01 — filling & blending panel. Metered O₂/He + air/EAN32 sources, verified at the analysis port before filling.');
+el('rect', { x:790, y:760, width:315, height:250, fill:'#fff', stroke:INK, 'stroke-width':2.6 }, fp);
+label(947, 780, 'FP-01 · FILLING & BLENDING PANEL', { size:10.5, parent:fp });
+
+/* internal manifold */
+pipe([[810, 950],[1085, 950]], 'hp', 2.8);
+
+/* internal connections */
+pipe([[790, 800],[830, 800],[830, 950]], 'o2', 1.8);      /* booster HP leg */
+valve(830, 872, 'v', 'o2', 'NV-02', 'Metering — boosted O₂/He', { needle:true, tagDy:4 });
+pipe([[790, 862],[868, 862],[868, 950]], 'o2', 1.8);      /* O₂ PP leg */
+valve(868, 908, 'v', 'o2', 'NV-03', 'Metering — O₂ partial-pressure', { needle:true, tagDy:4 });
+pipe([[790, 916],[905, 916],[905, 950]], 'he', 1.8);      /* He PP leg */
+valve(905, 933, 'v', 'he', 'NV-04', 'Metering — He partial-pressure', { needle:true, tagDy:-26 });
+pipe([[880, 760],[880, 800],[955, 800],[955, 950]], 'hp', 1.8);   /* direct air */
+pipe([[1105, 830],[1015, 830],[1015, 950]], 'hp', 1.8);   /* cascade air */
+pipe([[1105, 880],[1055, 880],[1055, 950]], 'ean', 1.8);  /* EAN32 */
+
+psv(812, 760, 'hp', 'PSV-05', '330 bar');
+inst(975, 815, 'AT', '03', [975, 946]);
+label(975, 845, 'ANALYSIS', { size:8, color:'#5b6b7d' });
+inst(1075, 815, 'PI', '11', [1060, 946]);
+label(1078, 845, 'MASTER 0.5%', { size:8, color:'#5b6b7d' });
+/* panel vent */
+pipe([[1085, 950],[1122, 950],[1122, 930]], 'vnt', 1.6);
+valve(1122, 918, 'v', 'vnt', 'V-17', 'Panel vent / bleed to safe location', { tagDy:4 });
+pipe([[1122, 906],[1122, 892]], 'vnt', 1.6);
+arrow(1122, 886, 'u', CLS.vnt.stroke);
+label(1146, 908, 'VENT', { size:8, color:'#5b6b7d' });
+
+/* whips + tanks */
+[848, 908, 968, 1028].forEach((x, i) => {
+  pipe([[x, 950],[x, 1010]], 'hp', 1.8);
+  valve(x, 985, 'v', 'hp', '', `Whip ${i+1} isolation + bleed`, { tagDy:4 });
+  pipe([[x, 1010],[x, 1030]], 'vnt', 1.4);
+  cyl(x - 12, 1030, 24, 78, INK);
+});
+label(938, 1128, 'FILL WHIPS 1–4 (DIN 232) → DIVING CYLINDERS', { size:9.5 });
+
+/* =========================================================
+   LEGEND  (top-left)
+========================================================= */
+const LX = 60, LY = 300;
+el('rect', { x:LX, y:LY, width:340, height:178, fill:'#fff', stroke:INK, 'stroke-width':1.2 });
+label(LX + 12, LY + 20, 'LEGEND', { size:10, anchor:'start', mono:true });
+const lg = [
+  ['amb', 'AMBIENT AIR'],
+  ['lp',  'LP AIR (10–13 bar)'], ['hp',  'HP AIR (300 bar)'], ['ean', 'EANx / EAN32'],
+  ['o2',  'OXYGEN'], ['he', 'HELIUM'], ['drv', 'DRIVE AIR'], ['vnt', 'VENT / DRAIN'],
+];
+lg.forEach(([k, name], i) => {
+  const y = LY + 40 + i * 18;
+  pipe([[LX + 14, y],[LX + 58, y]], k, 2.2);
+  label(LX + 66, y + 4, name, { size:8.5, anchor:'start' });
+});
+/* symbol mini-key (right column of legend) */
+valve(LX + 205, LY + 42, 'h', undefined, '', 'Isolation valve');
+label(LX + 224, LY + 46, 'ISOLATION VALVE', { size:8, anchor:'start' });
+valve(LX + 205, LY + 66, 'h', undefined, '', 'Needle valve', { needle:true });
+label(LX + 224, LY + 70, 'NEEDLE / METERING', { size:8, anchor:'start' });
+checkV(LX + 205, LY + 90, 'h', undefined, 1);
+label(LX + 224, LY + 94, 'CHECK (NON-RETURN)', { size:8, anchor:'start' });
+reg(LX + 205, LY + 120, undefined, '', '', 'Pressure regulator');
+label(LX + 224, LY + 124, 'REGULATOR / PMV', { size:8, anchor:'start' });
+el('circle', { cx: LX + 205, cy: LY + 150, r:11, fill:'#fff', stroke:INK, 'stroke-width':1.6 });
+label(LX + 205, LY + 154, 'PI', { size:8, mono:true });
+label(LX + 224, LY + 154, 'INSTRUMENT (PI / AT / TI / FI / MT)', { size:8, anchor:'start' });
+
+/* =========================================================
+   GENERAL NOTES (bottom-left) + TITLE BLOCK (bottom-right)
+========================================================= */
+el('rect', { x:60, y:985, width:360, height:215, fill:'#fff', stroke:INK, 'stroke-width':1.2 });
+label(72, 1006, 'GENERAL NOTES', { size:10, anchor:'start', mono:true });
+[
+  '1. O₂-CLEAN ZONE PER ASTM G93 / CGA G-4.1.',
+  '2. DESIGN 300 bar · HP PSVs SET 330 bar.',
+  '3. >23.5% O₂ = OXYGEN SERVICE (INCL. EAN32).',
+  '4. ALL VENTS & PSV DISCHARGES ROUTE OUTDOORS,',
+  '    CLEAR OF THE COMPRESSOR INTAKE.',
+  '5. AT-01 ≥40% O₂ AND MT-01 SATURATION',
+  '    TRIP THE HP COMPRESSORS.',
+  '6. FILL FROM LOWEST BANK FIRST (CASCADE).',
+  '7. INFORMATIONAL — NOT LICENCE-GRADE.',
+].forEach((s, i) => label(72, 1030 + i * 19, s, { size:8.8, anchor:'start', weight:500 }));
+
+const TB = grp();
+el('rect', { x:1380, y:1000, width:358, height:200, fill:'#fff', stroke:INK, 'stroke-width':2 }, TB);
+el('path', { d:'M1380,1060 L1738,1060 M1380,1120 L1738,1120 M1560,1120 L1560,1200 M1380,1160 L1738,1160',
+  stroke:INK, 'stroke-width':1 }, TB);
+label(1394, 1024, 'BLENDSTATION', { size:13, anchor:'start', weight:700 });
+label(1394, 1044, 'GAS FILLING & BLENDING STATION', { size:9.5, anchor:'start', color:'#5b6b7d' });
+label(1394, 1082, 'PROCESS & INSTRUMENTATION DIAGRAM', { size:10, anchor:'start' });
+label(1394, 1100, 'MEMBRANE NITROX · TRIMIX · AIR — 300 bar', { size:8, anchor:'start', color:'#5b6b7d' });
+label(1394, 1141, 'DWG NO', { size:7.5, anchor:'start', color:'#5b6b7d' });
+label(1394, 1154, 'BSD-PID-001', { size:10, anchor:'start', mono:true });
+label(1572, 1141, 'REV', { size:7.5, anchor:'start', color:'#5b6b7d' });
+label(1572, 1154, 'A', { size:10, anchor:'start', mono:true });
+label(1394, 1181, 'DATE', { size:7.5, anchor:'start', color:'#5b6b7d' });
+label(1394, 1194, '2026-07-12', { size:10, anchor:'start', mono:true });
+label(1572, 1181, 'SCALE', { size:7.5, anchor:'start', color:'#5b6b7d' });
+label(1572, 1194, 'NTS', { size:10, anchor:'start', mono:true });
+
+})();
+</script>
+</body>
+</html>
