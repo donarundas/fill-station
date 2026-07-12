@@ -219,7 +219,7 @@ const APRON = () => hasOutdoor()
 const WX1 = () => RM().w + 0.8;
 const WY1 = () => APRON().y1 + 0.6;
 const ZTOP = () => RM().h + 0.6;                // top of elevation canvas
-const RACK = () => Math.min(2.4, Math.max(2.2, RM().h - 1.0)); // wall-run height 2.2–2.4 m (practice); keeps ≥2.03 m egress headroom
+const RACK = () => Math.max(0.5, Math.min(2.4, RM().h - 0.5)); // wall-run height, always below the ceiling
 const KIND = {
   lp:  '#c2700d', hp: '#1d4ed8', ean: '#0f766e', o2: '#15803d', he: '#8a5a2b',
   drv: '#c2700d', vnt: '#8b93a1', sig: '#7c8794', amb: '#1c2530', x: '#64748b',
@@ -252,7 +252,7 @@ function defaultScene() {
       I('BANK-N', 'EAN32 cascade rack 4×50 L · 300 bar — chained to the wall at ⅓ and ⅔ height', 'cyl-rack', 'ean', 1.10, 0.35, 1.80, 7.70, 0.15, 0, 0),
       I('O2-01', 'Oxygen cascade rack 4×50 L · 200 bar (O₂-clean)', 'cyl-rack', 'o2', 1.10, 0.35, 1.80, 9.30, 0.15, 0, 0),
       I('HE-01', 'Helium cascade rack 2×50 L · 200 bar', 'cyl-rack', 'he', 0.60, 0.35, 1.80, 11.20, 0.15, 0, 0),
-      I('BST-01', 'USUN GBD40-OL booster — WALL-MOUNTED unit (O₂-clean)', 'wall-panel', 'o2', 0.75, 0.45, 0.50, 11.60, 2.30, 1.20, 90),
+      I('BST-01', 'USUN GBD40-OL booster — WALL-MOUNTED unit (O₂-clean)', 'wall-panel', 'o2', 0.75, 0.45, 0.50, 11.55, 2.30, 1.20, 90),
       I('AT-03', 'DE-OX SUB analyzer + LBL-01 printer (bench — electrical: kept OUTSIDE the O₂ separation ring)', 'box', 'x', 0.60, 0.40, 0.35, 10.90, 3.60, 0.75, 0, { bench: true }),
       I('FP-01', 'Fill & blending panel (wall)', 'wall-panel', 'hp', 1.20, 0.25, 0.90, 11.70, 2.30, 1.00, 90),
       I('BAY-01', 'Cylinder fill / staging bay', 'area', 'x', 2.60, 2.20, 0.02, 9.20, 4.30, 0, 0),
@@ -285,7 +285,9 @@ function defaultScene() {
   };
 }
 
-const state = { scene: defaultScene(), selectedId: null, drag: null, undoSnap: null };
+const state = { scene: defaultScene(), selectedId: null, drag: null, undo: [] };
+const UNDO_MAX = 40;
+function pushUndo(snap) { state.undo.push(snap || structuredClone(state.scene)); if (state.undo.length > UNDO_MAX) state.undo.shift(); }
 
 /* ---------- geometry ---------- */
 const fx = (it) => (it.rot % 180 === 0) ? it.w : it.d;   // placed footprint extent along x
@@ -699,9 +701,10 @@ function renderInspector() {
       <button type="button" id="insp-rot">⟳ Rotate 90°</button>
       <button type="button" id="insp-desel">Deselect</button>
     </div>
-    <div class="hint">Arrows nudge 0.1 m (⇧ 0.5) · [ ] adjust height · R rotate · Esc deselect · ⌘Z undo</div>`;
+    <div class="hint">Arrows nudge 0.1 m (⇧ 0.5) · [ ] adjust height · R rotate · Esc deselect · ⌘Z undo (multi-step)</div>`;
   for (const ax of ['x', 'y', 'z']) {
     document.getElementById('insp-' + ax).addEventListener('input', (e) => {
+      if (it.fixed) return;
       // NB: a number input sanitises junk to '' and Number('') === 0 — reject empties explicitly
       if (e.target.value.trim() === '') return;
       const v = Number(e.target.value);
@@ -773,21 +776,31 @@ function validateScene(o) {
   const err = (m) => { throw new Error(m); };
   if (!o || typeof o !== 'object') err('not an object');
   if (o.schemaVersion !== 1) err(`schemaVersion ${o.schemaVersion} (expected 1)`);
-  if (!o.room || typeof o.room.w !== 'number' || typeof o.room.d !== 'number' || typeof o.room.h !== 'number')
-    err('room.w/d/h must be numbers');
+  if (!o.room || !['w', 'd', 'h'].every((k) => Number.isFinite(o.room[k]) && o.room[k] > 0))
+    err('room.w/d/h must be finite positive numbers');
+  if (o.room.w > 200 || o.room.d > 200 || o.room.h > 30) err('room dimensions are unreasonably large');
   if (!Array.isArray(o.items) || !o.items.length) err('items missing');
+  const TYPES = new Set(['box', 'cyl-rack', 'cyl-v', 'wall-panel', 'wall-marker', 'door', 'area', 'hood']);
   const ids = new Set();
   for (const it of o.items) {
     for (const f of ['id', 'label', 'type', 'kind']) if (typeof it[f] !== 'string') err(`item ${it.id || '?'}: ${f} must be a string`);
-    for (const f of ['w', 'd', 'h', 'x', 'y', 'z']) if (!Number.isFinite(it[f])) err(`item ${it.id}: ${f} must be a number`);
+    if (!TYPES.has(it.type)) err(`item ${it.id}: unknown type "${it.type}"`);
+    if (!(it.kind in KIND)) err(`item ${it.id}: unknown kind "${it.kind}"`);
+    for (const f of ['x', 'y', 'z']) if (!Number.isFinite(it[f])) err(`item ${it.id}: ${f} must be a number`);
+    for (const f of ['w', 'd', 'h']) if (!(Number.isFinite(it[f]) && it[f] > 0)) err(`item ${it.id}: ${f} must be a positive number`);
     if (![0, 90, 180, 270].includes(it.rot)) err(`item ${it.id}: rot ${it.rot} not in 0/90/180/270`);
     if (ids.has(it.id)) err(`duplicate item id ${it.id}`);
     ids.add(it.id);
   }
   if (!Array.isArray(o.hoses)) err('hoses missing');
+  const hids = new Set();
   for (const h of o.hoses) {
+    if (typeof h.id !== 'string') err('hose id must be a string');
+    if (hids.has(h.id)) err(`duplicate hose id ${h.id}`);
+    hids.add(h.id);
     if (!ids.has(h.from)) err(`hose ${h.id}: from "${h.from}" not an item`);
     if (!ids.has(h.to)) err(`hose ${h.id}: to "${h.to}" not an item`);
+    if (h.from === h.to) err(`hose ${h.id}: from and to are the same item`);
   }
   return o;
 }
@@ -795,6 +808,7 @@ const RETIRED = new Set(['DG-01', 'DG-02', 'FT-01']);
 function migrate(scene) {
   scene.items = scene.items.filter((i) => !RETIRED.has(i.id));
   scene.hoses = scene.hoses.filter((h) => !RETIRED.has(h.from) && !RETIRED.has(h.to));
+  if (!scene.items.length) throw new Error('every item was retired — nothing left to load');
   return scene;
 }
 function loadStored() {
@@ -812,7 +826,7 @@ function loadStored() {
 function rotateSelected() {
   const it = state.selectedId && byId(state.selectedId);
   if (!it || it.fixed) return;
-  state.undoSnap = structuredClone(state.scene);
+  pushUndo();
   const cx = it.x + fx(it) / 2, cy = it.y + fy(it) / 2;
   it.rot = (it.rot + 90) % 360;
   const b = bounds(it);
@@ -827,17 +841,18 @@ function bindView(viewKey) {
   const toSvg = (ev) => new DOMPoint(ev.clientX, ev.clientY).matrixTransform(svg.getScreenCTM().inverse());
 
   svg.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary || state.drag) return;    // ignore a 2nd finger / re-entrant down
     const g = e.target instanceof Element ? e.target.closest('[data-id]') : null;
     if (!g) { state.selectedId = null; commit(false); return; }
     const it = byId(g.getAttribute('data-id'));
     state.selectedId = it.id;
     if (it.fixed) { commit(false); return; }
     const p0 = toSvg(e);
-    // plane coords this view edits
     const A = V.hAxis, B = V.vAxis;
-    state.undoSnap = structuredClone(state.scene);
-    state.drag = { id: it.id, view: viewKey, p0, a0: it[A], b0: it[B], moved: false };
-    svg.setPointerCapture(e.pointerId);        // capture on the persistent root
+    // stash a pre-move snapshot; only committed to the undo stack once the item ACTUALLY moves,
+    // so a plain click (select) never burns an undo step.
+    state.drag = { id: it.id, view: viewKey, p0, a0: it[A], b0: it[B], moved: false, snap: structuredClone(state.scene) };
+    try { svg.setPointerCapture(e.pointerId); } catch (_) { /* no active pointer (synthetic) */ }
     commit(false);
     e.preventDefault();
   });
@@ -851,10 +866,11 @@ function bindView(viewKey) {
       return;
     }
     const it = byId(d.id);
+    if (!it) { state.drag = null; return; }     // item vanished (concurrent import)
     const p = toSvg(e);
     const dA = (p.x - d.p0.x) / S;
     const dB = ((p.y - d.p0.y) / S) * (V.elev ? -1 : 1);
-    if (Math.abs(dA) + Math.abs(dB) > 0.02) { d.moved = true; hideTip(); }
+    if (Math.abs(dA) + Math.abs(dB) > 0.02 && !d.moved) { d.moved = true; pushUndo(d.snap); hideTip(); }
     const b = bounds(it);
     if (V.hAxis === 'x') it.x = clamp(snap(d.a0 + dA), b.x0, b.x1 - fx(it));
     else it.y = clamp(snap(d.a0 + dA), b.y0, b.y1 - fy(it));
@@ -865,7 +881,6 @@ function bindView(viewKey) {
 
   const end = (e) => {
     if (!state.drag || state.drag.view !== viewKey) return;
-    if (!state.drag.moved) state.undoSnap = null;   // click, not a drag — don't burn the undo slot
     state.drag = null;
     commit();                                        // save on drop
     void e;
@@ -877,22 +892,20 @@ function bindView(viewKey) {
 
 /* keyboard */
 window.addEventListener('keydown', (e) => {
-  const t = e.target;
-  if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { /* let inputs keep their own undo */ }
-    return;
-  }
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;  // typing — leave keys to the field
+  // ⌘Z / Ctrl+Z — undo (pop the stack)
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-    if (state.undoSnap) {
-      const cur = structuredClone(state.scene);
-      state.scene = state.undoSnap;
-      state.undoSnap = cur;                          // second press = redo
+    if (state.undo.length) {
+      state.scene = state.undo.pop();
       if (state.selectedId && !byId(state.selectedId)) state.selectedId = null;
       commit();
     }
     e.preventDefault();
     return;
   }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;   // never hijack ⌘R, ⌘arrows, OS shortcuts
+  if (ae && (ae.tagName === 'BUTTON' || ae.tagName === 'A' || ae.tagName === 'SELECT' || (ae.closest && ae.closest('.toolbar')))) return;  // key on a focused control, not the canvas
   const it = state.selectedId && byId(state.selectedId);
   if (!it) return;
   const step = e.shiftKey ? 0.5 : 0.1;
@@ -922,7 +935,7 @@ window.addEventListener('keydown', (e) => {
 const CLR = { unit: 0.5, service: 0.8, aisle: 1.2, wall: 0.15, cascade: 1.0, shrink: 1.2 };
 
 function optimizeLayout() {
-  state.undoSnap = structuredClone(state.scene);
+  pushUndo();
   const items = state.scene.items;
   const get = (id) => items.find((i) => i.id === id);
 
@@ -933,7 +946,7 @@ function optimizeLayout() {
     type: 'wall-marker', kind: 'amb', w: 0.6, d: 0.3, h: 0.6, x: 1.8, y: 0.05, z: 2.9, rot: 0 });
   if (!get('HOOD-01')) items.push({ id: 'HOOD-01', label: 'Extraction hood over the compressors — captures rejected heat at source',
     type: 'hood', kind: 'vnt', w: 2.6, d: 1.0, h: 0.45, x: 0.9, y: 2.5, z: 2.05, rot: 0 });
-  if (!state.scene.hoses.some((h) => h.kind === 'duct')) state.scene.hoses.push({ id: 'H-22', from: 'HOOD-01', to: 'VF-02', kind: 'duct' });
+  if (!state.scene.hoses.some((h) => h.id === 'H-22')) state.scene.hoses.push({ id: 'H-22', from: 'HOOD-01', to: 'VF-02', kind: 'duct' });
 
   // The O₂ bay is PINNED to the NE corner: leeward of the west-wall intake and
   // supply air. If the user had it elsewhere we override and say so — an
@@ -1029,6 +1042,13 @@ function optimizeLayout() {
     it.x = clamp(snap(ox), 0, RM().w + 0.2 - fx(it));
     ox += fx(it) + 1.2;
   }
+  // contain EVERY item — grow the room for any imported/non-canonical item the plan
+  // didn't place, then re-clamp all so nothing floats outside the (possibly shrunk) walls.
+  let maxX = 0, maxY = 0;
+  for (const it of items) { if (it.outdoor) continue; maxX = Math.max(maxX, it.x + fx(it)); maxY = Math.max(maxY, it.y + fy(it)); }
+  state.scene.room.w = Math.max(state.scene.room.w, Math.ceil((maxX + 0.3) * 2) / 2);
+  state.scene.room.d = Math.max(state.scene.room.d, Math.ceil((maxY + 0.3) * 2) / 2);
+  for (const it of items) { if (it.outdoor) continue; const bb = bounds(it); it.x = clamp(it.x, bb.x0, bb.x1 - fx(it)); it.y = clamp(it.y, bb.y0, bb.y1 - fy(it)); it.z = clamp(it.z, 0, RM().h - it.h); }
   state.selectedId = null;
   commit();
   return { bayWasElsewhere };
@@ -1053,6 +1073,8 @@ function toast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast';
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
     t.style.cssText = 'position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c2530;color:#eef2f6;' +
       'padding:11px 18px;border-radius:9px;font:600 13px/1.4 ui-monospace,Menlo,monospace;box-shadow:0 6px 18px rgba(10,20,35,.35);' +
       'z-index:60;opacity:0;transition:opacity .15s;max-width:90vw;text-align:center';
@@ -1071,7 +1093,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
   a.href = URL.createObjectURL(blob);
   a.download = 'station-layout.json';
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 const fileInput = document.getElementById('import-file');
 document.getElementById('btn-import').addEventListener('click', () => fileInput.click());
@@ -1082,7 +1104,7 @@ fileInput.addEventListener('change', async (e) => {
   try {
     const text = await f.text();
     const scene = migrate(validateScene(JSON.parse(text)));
-    state.undoSnap = structuredClone(state.scene);
+    pushUndo();
     state.scene = scene;                             // atomic: only replace after full validation
     state.selectedId = null;
     commit();
@@ -1091,12 +1113,16 @@ fileInput.addEventListener('change', async (e) => {
   }
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
-  if (!confirm('Reset to the reference layout? Your current arrangement will be replaced (⌘Z restores it once).')) return;
-  state.undoSnap = structuredClone(state.scene);
+  if (!confirm('Reset to the reference layout? Your current arrangement will be replaced (⌘Z restores it).')) return;
+  pushUndo();
   state.scene = defaultScene();
   state.selectedId = null;
   commit();
 });
+// De-arm destructive toolbar buttons: blur after use, and never let a restored
+// focus (on reload) leave a button ready to fire on the next Space/Enter.
+document.querySelectorAll('.toolbar button').forEach((b) => b.addEventListener('click', () => b.blur()));
+window.addEventListener('pageshow', () => { const a = document.activeElement; if (a && a.closest && a.closest('.toolbar')) a.blur(); });
 
 /* ---------- tooltips (shared idiom with the P&ID page) ---------- */
 const tipEl = document.createElement('div');
@@ -1129,7 +1155,7 @@ for (const k of ['top', 'front', 'side']) bindView(k);
 renderAll();
 
 /* read-only debug handle for scripted verification */
-window.BSD_LAYOUT = { getScene: () => state.scene, version: 1 };
+window.BSD_LAYOUT = { getScene: () => structuredClone(state.scene), version: 1 };
 })();
 </script>
 </body>
